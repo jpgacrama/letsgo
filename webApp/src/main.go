@@ -23,7 +23,6 @@ func createSnippet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
-
 	w.Write([]byte("Create a new snippet..."))
 }
 
