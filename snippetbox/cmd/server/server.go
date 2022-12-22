@@ -15,7 +15,7 @@ var TemplateFiles = []string{
 }
 
 type Server struct {
-	handler http.Handler
+	handler *http.ServeMux
 }
 
 func CreateServer() (*Server, error) {
