@@ -8,6 +8,8 @@ import (
 	"strconv"
 )
 
+var TemplateFile = "./ui/html/home.page.tmpl"
+
 type Server struct {
 	handler http.Handler
 }
@@ -35,7 +37,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	ts, err := template.ParseFiles("./ui/html/home.page.tmpl")
+	ts, err := template.ParseFiles(TemplateFile)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, "Template file not found", http.StatusNotFound)

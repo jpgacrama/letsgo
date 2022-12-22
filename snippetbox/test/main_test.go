@@ -11,6 +11,7 @@ import (
 
 func TestHandler(t *testing.T) {
 	t.Run("checking home page OK Case", func(t *testing.T) {
+		handlers.TemplateFile = "../ui/html/home.page.tmpl"
 		server, err := handlers.CreateServer()
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
@@ -18,7 +19,7 @@ func TestHandler(t *testing.T) {
 		request := newRequest("")
 		response := httptest.NewRecorder()
 		server.GetHandler().ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusAccepted)
+		assertStatus(t, response, http.StatusOK)
 	})
 }
 
