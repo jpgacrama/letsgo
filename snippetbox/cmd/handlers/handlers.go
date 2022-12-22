@@ -38,13 +38,13 @@ func home(w http.ResponseWriter, r *http.Request) {
 	ts, err := template.ParseFiles("./ui/html/home.page.tmpl")
 	if err != nil {
 		log.Println(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, "Template file not found", http.StatusNotFound)
 		return
 	}
 	err = ts.Execute(w, nil)
 	if err != nil {
 		log.Println(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Cannot execute Template", http.StatusInternalServerError)
 	}
 }
 
