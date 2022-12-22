@@ -20,7 +20,7 @@ func CreateServer() (*Server, error) {
 		router.HandleFunc("/snippet", showSnippet)
 		router.HandleFunc("/snippet/create", createSnippet)
 	} else {
-		return nil, fmt.Errorf("Cannot create Handler.")
+		return nil, fmt.Errorf("cannot create Handler")
 	}
 	p.handler = router
 	return p, nil
