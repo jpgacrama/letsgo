@@ -21,17 +21,17 @@ type Server struct {
 
 func CreateServer() (*Server, error) {
 	p := new(Server)
-	routes, err := createRoutes()
+	fileServer := createFileServer()
+	routes, err := createRoutes(fileServer)
 	if err != nil {
 		log.Fatalln("creating routes failed")
 	}
-	fileServer := createFileServer()
 	p.mux = routes
 	p.fileServer = fileServer
 	return p, nil
 }
 
-func createRoutes() (*http.ServeMux, error) {
+func createRoutes(fileServer http.Handler) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
 	if mux != nil {
 		mux.HandleFunc("/", home)
@@ -40,6 +40,7 @@ func createRoutes() (*http.ServeMux, error) {
 	} else {
 		return nil, fmt.Errorf("cannot create Handler")
 	}
+	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 	return mux, nil
 }
 
