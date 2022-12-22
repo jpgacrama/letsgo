@@ -9,13 +9,14 @@ import (
 	"testing"
 )
 
-func TestHomePage(t *testing.T) {
-	server.TemplateFiles = []string{
-		"../ui/html/home.page.tmpl",
-		"../ui/html/base.layout.tmpl",
-		"../ui/html/footer.partial.tmpl",
-	}
+var templateFiles = []string{
+	"../ui/html/home.page.tmpl",
+	"../ui/html/base.layout.tmpl",
+	"../ui/html/footer.partial.tmpl",
+}
 
+func TestHomePage(t *testing.T) {
+	server.TemplateFiles = templateFiles
 	t.Run("checking home page OK Case", func(t *testing.T) {
 		server, err := server.CreateServer()
 		if err != nil {
@@ -35,6 +36,20 @@ func TestHomePage(t *testing.T) {
 		response := httptest.NewRecorder()
 		server.GetMux().ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
+	})
+}
+
+func TestStaticPage(t *testing.T) {
+	server.TemplateFiles = templateFiles
+	t.Run("checking static page OK Case", func(t *testing.T) {
+		server, err := server.CreateServer()
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest("static")
+		response := httptest.NewRecorder()
+		server.GetMux().ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
 	})
 }
 
