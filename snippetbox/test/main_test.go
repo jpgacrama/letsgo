@@ -15,6 +15,8 @@ var templateFiles = []string{
 	"../ui/html/footer.partial.tmpl",
 }
 
+var staticFolder = "../ui/static"
+
 func TestHomePage(t *testing.T) {
 	server.TemplateFiles = templateFiles
 	t.Run("checking home page OK Case", func(t *testing.T) {
@@ -41,12 +43,13 @@ func TestHomePage(t *testing.T) {
 
 func TestStaticPage(t *testing.T) {
 	server.TemplateFiles = templateFiles
+	server.StaticFolder = staticFolder
 	t.Run("checking static page OK Case", func(t *testing.T) {
 		server, err := server.CreateServer()
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
-		request := newRequest("static")
+		request := newRequest("static/")
 		response := httptest.NewRecorder()
 		server.GetMux().ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)

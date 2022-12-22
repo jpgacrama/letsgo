@@ -14,6 +14,8 @@ var TemplateFiles = []string{
 	"./ui/html/footer.partial.tmpl",
 }
 
+var StaticFolder = "./ui/static"
+
 type Server struct {
 	mux        *http.ServeMux
 	fileServer http.Handler
@@ -45,7 +47,7 @@ func createRoutes(fileServer http.Handler) (*http.ServeMux, error) {
 }
 
 func createFileServer() http.Handler {
-	return http.FileServer(http.Dir("./ui/static/"))
+	return http.FileServer(http.Dir(StaticFolder))
 }
 
 func (s *Server) GetMux() *http.ServeMux {
