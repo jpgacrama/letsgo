@@ -5,19 +5,19 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"snippetbox/cmd/handlers"
+	"snippetbox/cmd/server"
 	"testing"
 )
 
 func TestHomePage(t *testing.T) {
-	handlers.TemplateFiles = []string{
+	server.TemplateFiles = []string{
 		"../ui/html/home.page.tmpl",
 		"../ui/html/base.layout.tmpl",
 		"../ui/html/footer.partial.tmpl",
 	}
 
 	t.Run("checking home page OK Case", func(t *testing.T) {
-		server, err := handlers.CreateServer()
+		server, err := server.CreateServer()
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
@@ -27,7 +27,7 @@ func TestHomePage(t *testing.T) {
 		assertStatus(t, response, http.StatusOK)
 	})
 	t.Run("checking home page NOK Case", func(t *testing.T) {
-		server, err := handlers.CreateServer()
+		server, err := server.CreateServer()
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
