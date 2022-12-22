@@ -15,25 +15,40 @@ var TemplateFiles = []string{
 }
 
 type Server struct {
-	handler *http.ServeMux
+	mux        *http.ServeMux
+	fileServer http.Handler
 }
 
 func CreateServer() (*Server, error) {
 	p := new(Server)
-	router := http.NewServeMux()
-	if router != nil {
-		router.HandleFunc("/", home)
-		router.HandleFunc("/snippet", showSnippet)
-		router.HandleFunc("/snippet/create", createSnippet)
-	} else {
-		return nil, fmt.Errorf("cannot create Handler")
+	routes, err := createRoutes()
+	if err != nil {
+		log.Fatalln("creating routes failed")
 	}
-	p.handler = router
+	fileServer := createFileServer()
+	p.mux = routes
+	p.fileServer = fileServer
 	return p, nil
 }
 
-func (s *Server) GetHandler() http.Handler {
-	return s.handler
+func createRoutes() (*http.ServeMux, error) {
+	mux := http.NewServeMux()
+	if mux != nil {
+		mux.HandleFunc("/", home)
+		mux.HandleFunc("/snippet", showSnippet)
+		mux.HandleFunc("/snippet/create", createSnippet)
+	} else {
+		return nil, fmt.Errorf("cannot create Handler")
+	}
+	return mux, nil
+}
+
+func createFileServer() http.Handler {
+	return http.FileServer(http.Dir("./ui/static/"))
+}
+
+func (s *Server) GetMux() *http.ServeMux {
+	return s.mux
 }
 
 func home(w http.ResponseWriter, r *http.Request) {

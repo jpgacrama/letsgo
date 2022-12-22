@@ -23,7 +23,7 @@ func TestHomePage(t *testing.T) {
 		}
 		request := newRequest("")
 		response := httptest.NewRecorder()
-		server.GetHandler().ServeHTTP(response, request)
+		server.GetMux().ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
 	})
 	t.Run("checking home page NOK Case", func(t *testing.T) {
@@ -33,7 +33,7 @@ func TestHomePage(t *testing.T) {
 		}
 		request := newRequest("123")
 		response := httptest.NewRecorder()
-		server.GetHandler().ServeHTTP(response, request)
+		server.GetMux().ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
 	})
 }
