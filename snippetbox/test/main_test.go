@@ -13,6 +13,7 @@ func TestHomePage(t *testing.T) {
 	handlers.TemplateFiles = []string{
 		"../ui/html/home.page.tmpl",
 		"../ui/html/base.layout.tmpl",
+		"../ui/html/footer.partial.tmpl",
 	}
 
 	t.Run("checking home page OK Case", func(t *testing.T) {
