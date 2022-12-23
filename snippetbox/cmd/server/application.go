@@ -52,7 +52,7 @@ func (app *Application) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 
 func (app *Application) serverError(w http.ResponseWriter, err error) {
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
-	app.ErrorLog.Println(trace)
+	app.ErrorLog.Output(2, trace)
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
