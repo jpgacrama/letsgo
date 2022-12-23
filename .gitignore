@@ -1,3 +1,5 @@
 webApp/go.mod
 
 *.mod
+
+snippetbox/go.sum
