@@ -39,10 +39,10 @@ func createRoutes(fileServer http.Handler) (*http.ServeMux, error) {
 		mux.HandleFunc("/", home)
 		mux.HandleFunc("/snippet", showSnippet)
 		mux.HandleFunc("/snippet/create", createSnippet)
+		mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 	} else {
 		return nil, fmt.Errorf("cannot create Handler")
 	}
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 	return mux, nil
 }
 
