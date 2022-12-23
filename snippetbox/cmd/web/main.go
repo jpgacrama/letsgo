@@ -7,7 +7,7 @@ import (
 	"os"
 	"snippetbox/cmd/server"
 
-	"github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func parseUserInputs() (*string, *string) {
