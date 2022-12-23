@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-var TemplateFiles = []string{
+var templateFiles = []string{
 	"./ui/html/home.page.tmpl",
 	"./ui/html/base.layout.tmpl",
 	"./ui/html/footer.partial.tmpl",
@@ -16,33 +16,33 @@ var TemplateFiles = []string{
 
 var StaticFolder = "./ui/static"
 
-type application struct {
-	errorLog *log.Logger
-	infoLog  *log.Logger
+type Application struct {
+	Addr     *string
+	ErrorLog *log.Logger
+	InfoLog  *log.Logger
 }
 
-func CreateServer(addr *string, errorLog *log.Logger, infoLog *log.Logger) (*http.Server, error) {
-	app := &application{
-		errorLog: errorLog,
-		infoLog:  infoLog,
+func CreateServer(app *Application, tmplFiles ...string) (*http.Server, error) {
+	if len(tmplFiles) > 0 {
+		templateFiles = tmplFiles
 	}
 	fileServer := createFileServer()
 	routes, err := createRoutes(fileServer, app)
 	if err != nil {
 		msg := "creating routes failed"
-		errorLog.Println(msg)
+		app.ErrorLog.Println(msg)
 		return nil, fmt.Errorf(msg)
 	}
 
 	srv := &http.Server{
-		Addr:     *addr,
-		ErrorLog: errorLog,
+		Addr:     *app.Addr,
+		ErrorLog: app.ErrorLog,
 		Handler:  routes,
 	}
 	return srv, nil
 }
 
-func createRoutes(fileServer http.Handler, app *application) (*http.ServeMux, error) {
+func createRoutes(fileServer http.Handler, app *Application) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
 	if mux != nil {
 		mux.HandleFunc("/", app.home)
@@ -59,13 +59,13 @@ func createFileServer() http.Handler {
 	return http.FileServer(http.Dir(StaticFolder))
 }
 
-func (app *application) home(w http.ResponseWriter, r *http.Request) {
+func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
 	}
 
-	ts, err := template.ParseFiles(TemplateFiles...)
+	ts, err := template.ParseFiles(templateFiles...)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, "Template file not found", http.StatusNotFound)
@@ -78,7 +78,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
+func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
 		http.NotFound(w, r)
@@ -87,7 +87,7 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
 }
 
-func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
+func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		w.Header().Set("Allow", "POST")
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
