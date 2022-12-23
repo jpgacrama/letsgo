@@ -15,9 +15,9 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	server, err := server.CreateServer()
+	server, err := server.CreateServer(addr, errorLog)
 	if err == nil {
 		infoLog.Printf("Starting server on %s", *addr)
-		errorLog.Fatal(http.ListenAndServe(*addr, server.GetMux()))
+		errorLog.Fatal(server.ListenAndServe())
 	}
 }

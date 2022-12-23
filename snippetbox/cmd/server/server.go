@@ -16,21 +16,21 @@ var TemplateFiles = []string{
 
 var StaticFolder = "./ui/static"
 
-type Server struct {
-	mux        *http.ServeMux
-	fileServer http.Handler
-}
-
-func CreateServer() (*Server, error) {
-	p := new(Server)
+func CreateServer(addr *string, errorLog *log.Logger) (*http.Server, error) {
 	fileServer := createFileServer()
 	routes, err := createRoutes(fileServer)
 	if err != nil {
-		log.Fatalln("creating routes failed")
+		msg := "creating routes failed"
+		errorLog.Println(msg)
+		return nil, fmt.Errorf(msg)
 	}
-	p.mux = routes
-	p.fileServer = fileServer
-	return p, nil
+
+	srv := &http.Server{
+		Addr:     *addr,
+		ErrorLog: errorLog,
+		Handler:  routes,
+	}
+	return srv, nil
 }
 
 func createRoutes(fileServer http.Handler) (*http.ServeMux, error) {
@@ -48,10 +48,6 @@ func createRoutes(fileServer http.Handler) (*http.ServeMux, error) {
 
 func createFileServer() http.Handler {
 	return http.FileServer(http.Dir(StaticFolder))
-}
-
-func (s *Server) GetMux() *http.ServeMux {
-	return s.mux
 }
 
 func home(w http.ResponseWriter, r *http.Request) {

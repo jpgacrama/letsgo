@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"snippetbox/cmd/server"
 	"testing"
 )
@@ -19,24 +20,26 @@ var staticFolder = "../ui/static"
 
 func TestHomePage(t *testing.T) {
 	server.TemplateFiles = templateFiles
+	addr := ":4000"
+	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	t.Run("checking home page OK Case", func(t *testing.T) {
-		server, err := server.CreateServer()
+		server, err := server.CreateServer(&addr, errorLog)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
 		request := newRequest("")
 		response := httptest.NewRecorder()
-		server.GetMux().ServeHTTP(response, request)
+		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
 	})
 	t.Run("checking home page NOK Case", func(t *testing.T) {
-		server, err := server.CreateServer()
+		server, err := server.CreateServer(&addr, errorLog)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
 		request := newRequest("123")
 		response := httptest.NewRecorder()
-		server.GetMux().ServeHTTP(response, request)
+		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
 	})
 }
@@ -44,24 +47,27 @@ func TestHomePage(t *testing.T) {
 func TestStaticPage(t *testing.T) {
 	server.TemplateFiles = templateFiles
 	server.StaticFolder = staticFolder
+	addr := ":4000"
+	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
 	t.Run("checking static page OK Case", func(t *testing.T) {
-		server, err := server.CreateServer()
+		server, err := server.CreateServer(&addr, errorLog)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
 		request := newRequest("static/")
 		response := httptest.NewRecorder()
-		server.GetMux().ServeHTTP(response, request)
+		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
 	})
 	t.Run("checking static page NOK Case", func(t *testing.T) {
-		server, err := server.CreateServer()
+		server, err := server.CreateServer(&addr, errorLog)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
 		request := newRequest("static/123")
 		response := httptest.NewRecorder()
-		server.GetMux().ServeHTTP(response, request)
+		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
 	})
 }
