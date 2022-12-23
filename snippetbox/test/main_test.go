@@ -54,6 +54,16 @@ func TestStaticPage(t *testing.T) {
 		server.GetMux().ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
 	})
+	t.Run("checking static page NOK Case", func(t *testing.T) {
+		server, err := server.CreateServer()
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest("static/123")
+		response := httptest.NewRecorder()
+		server.GetMux().ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusNotFound)
+	})
 }
 
 func newRequest(str string) *http.Request {
