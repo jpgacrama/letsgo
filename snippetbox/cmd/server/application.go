@@ -10,11 +10,18 @@ import (
 	"strconv"
 )
 
+type Record struct {
+	Title   string
+	Content string
+	Expires string
+}
+
 type Application struct {
-	Addr     *string
-	InfoLog  *log.Logger
-	ErrorLog *log.Logger
-	Snippets *mysql.SnippetModel
+	Addr      *string
+	InfoLog   *log.Logger
+	ErrorLog  *log.Logger
+	Snippets  *mysql.SnippetModel
+	SqlRecord *Record
 }
 
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
@@ -50,11 +57,10 @@ func (app *Application) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	title := "O snail"
-	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-	expires := "7"
-
-	id, err := app.Snippets.Insert(title, content, expires)
+	id, err := app.Snippets.Insert(
+		app.SqlRecord.Title,
+		app.SqlRecord.Content,
+		app.SqlRecord.Expires)
 	if err != nil {
 		app.serverError(w, err)
 

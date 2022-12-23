@@ -1,4 +1,4 @@
-package main_test
+package snippetbox_test
 
 import (
 	"fmt"
@@ -32,7 +32,7 @@ func TestHomePage(t *testing.T) {
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
-		request := newRequest("")
+		request := newRequest(http.MethodGet, "")
 		response := httptest.NewRecorder()
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
@@ -42,7 +42,7 @@ func TestHomePage(t *testing.T) {
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
-		request := newRequest("123")
+		request := newRequest(http.MethodGet, "123")
 		response := httptest.NewRecorder()
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
@@ -64,7 +64,7 @@ func TestStaticPage(t *testing.T) {
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
-		request := newRequest("static/")
+		request := newRequest(http.MethodGet, "static/")
 		response := httptest.NewRecorder()
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
@@ -74,15 +74,15 @@ func TestStaticPage(t *testing.T) {
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
-		request := newRequest("static/123")
+		request := newRequest(http.MethodGet, "static/123")
 		response := httptest.NewRecorder()
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
 	})
 }
 
-func newRequest(str string) *http.Request {
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/%s", str), nil)
+func newRequest(requestType, str string) *http.Request {
+	req := httptest.NewRequest(requestType, fmt.Sprintf("/%s", str), nil)
 	return req
 }
 
