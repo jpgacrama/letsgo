@@ -22,8 +22,9 @@ func TestHomePage(t *testing.T) {
 	server.TemplateFiles = templateFiles
 	addr := ":4000"
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	t.Run("checking home page OK Case", func(t *testing.T) {
-		server, err := server.CreateServer(&addr, errorLog)
+		server, err := server.CreateServer(&addr, errorLog, infoLog)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
@@ -33,7 +34,7 @@ func TestHomePage(t *testing.T) {
 		assertStatus(t, response, http.StatusOK)
 	})
 	t.Run("checking home page NOK Case", func(t *testing.T) {
-		server, err := server.CreateServer(&addr, errorLog)
+		server, err := server.CreateServer(&addr, errorLog, infoLog)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
@@ -49,9 +50,9 @@ func TestStaticPage(t *testing.T) {
 	server.StaticFolder = staticFolder
 	addr := ":4000"
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	t.Run("checking static page OK Case", func(t *testing.T) {
-		server, err := server.CreateServer(&addr, errorLog)
+		server, err := server.CreateServer(&addr, errorLog, infoLog)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
@@ -61,7 +62,7 @@ func TestStaticPage(t *testing.T) {
 		assertStatus(t, response, http.StatusOK)
 	})
 	t.Run("checking static page NOK Case", func(t *testing.T) {
-		server, err := server.CreateServer(&addr, errorLog)
+		server, err := server.CreateServer(&addr, errorLog, infoLog)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}

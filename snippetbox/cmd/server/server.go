@@ -16,9 +16,18 @@ var TemplateFiles = []string{
 
 var StaticFolder = "./ui/static"
 
-func CreateServer(addr *string, errorLog *log.Logger) (*http.Server, error) {
+type application struct {
+	errorLog *log.Logger
+	infoLog  *log.Logger
+}
+
+func CreateServer(addr *string, errorLog *log.Logger, infoLog *log.Logger) (*http.Server, error) {
+	app := &application{
+		errorLog: errorLog,
+		infoLog:  infoLog,
+	}
 	fileServer := createFileServer()
-	routes, err := createRoutes(fileServer)
+	routes, err := createRoutes(fileServer, app)
 	if err != nil {
 		msg := "creating routes failed"
 		errorLog.Println(msg)
@@ -33,12 +42,12 @@ func CreateServer(addr *string, errorLog *log.Logger) (*http.Server, error) {
 	return srv, nil
 }
 
-func createRoutes(fileServer http.Handler) (*http.ServeMux, error) {
+func createRoutes(fileServer http.Handler, app *application) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
 	if mux != nil {
-		mux.HandleFunc("/", home)
-		mux.HandleFunc("/snippet", showSnippet)
-		mux.HandleFunc("/snippet/create", createSnippet)
+		mux.HandleFunc("/", app.home)
+		mux.HandleFunc("/snippet", app.showSnippet)
+		mux.HandleFunc("/snippet/create", app.createSnippet)
 		mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 	} else {
 		return nil, fmt.Errorf("cannot create Handler")
@@ -50,7 +59,7 @@ func createFileServer() http.Handler {
 	return http.FileServer(http.Dir(StaticFolder))
 }
 
-func home(w http.ResponseWriter, r *http.Request) {
+func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
@@ -69,7 +78,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func showSnippet(w http.ResponseWriter, r *http.Request) {
+func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
 		http.NotFound(w, r)
@@ -78,7 +87,7 @@ func showSnippet(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
 }
 
-func createSnippet(w http.ResponseWriter, r *http.Request) {
+func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		w.Header().Set("Allow", "POST")
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
