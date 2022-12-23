@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"snippetbox/cmd/server"
+	"snippetbox/pkg/models/mysql"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -44,11 +45,13 @@ func main() {
 	}
 	defer db.Close()
 
-	server, err := server.CreateServer(&server.Application{
-		Addr:     addr,
-		InfoLog:  infoLog,
-		ErrorLog: errorLog,
-	})
+	server, err := server.CreateServer(
+		&server.Application{
+			Addr:     addr,
+			InfoLog:  infoLog,
+			ErrorLog: errorLog,
+			Snippets: &mysql.SnippetModel{DB: db},
+		})
 	if err == nil {
 		infoLog.Printf("Starting server on %s", *addr)
 		errorLog.Fatal(server.ListenAndServe())

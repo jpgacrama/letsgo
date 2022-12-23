@@ -6,13 +6,15 @@ import (
 	"log"
 	"net/http"
 	"runtime/debug"
+	"snippetbox/pkg/models/mysql"
 	"strconv"
 )
 
 type Application struct {
 	Addr     *string
-	ErrorLog *log.Logger
 	InfoLog  *log.Logger
+	ErrorLog *log.Logger
+	Snippets *mysql.SnippetModel
 }
 
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
