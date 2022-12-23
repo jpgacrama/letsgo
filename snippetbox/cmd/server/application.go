@@ -56,14 +56,12 @@ func (app *Application) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		app.clientError(w, http.StatusMethodNotAllowed)
 		return
 	}
-
 	id, err := app.Snippets.Insert(
 		app.SqlRecord.Title,
 		app.SqlRecord.Content,
 		app.SqlRecord.Expires)
 	if err != nil {
 		app.serverError(w, err)
-
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/snippet?id=%d", id), http.StatusSeeOther)

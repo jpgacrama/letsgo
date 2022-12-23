@@ -29,7 +29,7 @@ func TestCreateSnippet(t *testing.T) {
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
-		request := newRequest(http.MethodPost, "/snippet/create/")
+		request := newRequest(http.MethodPost, "snippet/create")
 		response := httptest.NewRecorder()
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
