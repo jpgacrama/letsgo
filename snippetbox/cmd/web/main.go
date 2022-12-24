@@ -51,6 +51,11 @@ func main() {
 			InfoLog:  infoLog,
 			ErrorLog: errorLog,
 			Snippets: &mysql.SnippetModel{DB: db},
+			SqlRecord: &server.Record{
+				Title:   "O snail",
+				Content: "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa",
+				Expires: "7",
+			},
 		})
 	if err == nil {
 		infoLog.Printf("Starting server on %s", *addr)

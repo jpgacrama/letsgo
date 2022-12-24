@@ -25,6 +25,7 @@ type Application struct {
 }
 
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
+	app.InfoLog.Println("----- Inside Home() ---- ")
 	if r.URL.Path != "/" {
 		app.notFound(w)
 		return
@@ -42,6 +43,7 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) ShowSnippet(w http.ResponseWriter, r *http.Request) {
+	app.InfoLog.Println("----- Inside ShowSnippet() ---- ")
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
 		app.notFound(w)
@@ -51,11 +53,19 @@ func (app *Application) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) CreateSnippet(w http.ResponseWriter, r *http.Request) {
+	app.InfoLog.Println("----- Inside CreateSnippet() ---- ")
 	if r.Method != "POST" {
 		w.Header().Set("Allow", "POST")
 		app.clientError(w, http.StatusMethodNotAllowed)
 		return
 	}
+
+	if app.SqlRecord == nil {
+		app.ErrorLog.Println("Sql Record is not defined")
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
 	id, err := app.Snippets.Insert(
 		app.SqlRecord.Title,
 		app.SqlRecord.Content,
