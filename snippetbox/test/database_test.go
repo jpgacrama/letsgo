@@ -17,6 +17,7 @@ func TestCreateSnippet(t *testing.T) {
 		Addr:     &addr,
 		InfoLog:  infoLog,
 		ErrorLog: errorLog,
+		Snippets: &mysql.SnippetModel{DB: db}, // mock DB
 		SqlRecord: &server.Record{
 			Title:   "O snail",
 			Content: "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa",

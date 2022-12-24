@@ -66,6 +66,12 @@ func (app *Application) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if app.Snippets == nil {
+		app.ErrorLog.Println("Snippets is not defined")
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
 	id, err := app.Snippets.Insert(
 		app.SqlRecord.Title,
 		app.SqlRecord.Content,
