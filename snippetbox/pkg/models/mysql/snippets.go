@@ -9,6 +9,10 @@ type SnippetModel struct {
 	DB *sql.DB
 }
 
+func (m *SnippetModel) Close() {
+	m.DB.Close()
+}
+
 func (m *SnippetModel) Insert(title, content, expires string) (int, error) {
 	stmt := `INSERT OR UPDATE INTO snippets (title, content, created, expires)
     VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))`
