@@ -36,11 +36,10 @@ func TestInsert(t *testing.T) {
 		repo.Close()
 	}()
 
-	query := "INSERT INTO users \\(id, title, content, created, expires\\) VALUES \\(\\?, \\?, \\?, \\?, \\?\\)"
+	query := "INSERT OR UPDATE INTO snippets \\(title, content, created, expires\\) VALUES \\(\\?, \\?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY)\\)"
 
 	prep := mock.ExpectPrepare(query)
 	prep.ExpectExec().WithArgs(
-		u.ID,
 		u.Title,
 		u.Content,
 		u.Created,
