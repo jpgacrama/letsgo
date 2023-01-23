@@ -11,6 +11,11 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+type application struct {
+	errorLog *log.Logger
+	infoLog  *log.Logger
+}
+
 func parseUserInputs() (*string, *string) {
 	addr := flag.String("addr", ":4000", "HTTP network address")
 	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
