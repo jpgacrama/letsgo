@@ -10,6 +10,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
+	"strconv"
 )
 
 var u = &models.Snippet{
@@ -17,7 +18,7 @@ var u = &models.Snippet{
 	Title:   "Title",
 	Content: "Content",
 	Created: time.Now(),
-	Expires: time.Now().AddDate(0, 0, 1),
+	Expires: 1,
 }
 
 func NewMock() (*sql.DB, sqlmock.Sqlmock) {
@@ -36,15 +37,15 @@ func TestInsert(t *testing.T) {
 		repo.Close()
 	}()
 
-	query := "INSERT OR UPDATE INTO snippets \\(title, content, created, expires\\) VALUES \\(\\?, \\?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY)\\)"
+	query := "INSERT OR UPDATE INTO snippets \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
+	expiresInString := strconv.FormatInt(int64(u.Expires), 10)
 
 	prep := mock.ExpectPrepare(query)
 	prep.ExpectExec().WithArgs(
 		u.Title,
 		u.Content,
-		u.Created,
-		u.Expires).WillReturnResult(sqlmock.NewResult(0, 1))
+		expiresInString).WillReturnResult(sqlmock.NewResult(0, 1))
 
-	_, err := repo.Insert(u.Title, u.Content, u.Expires.String())
+	_, err := repo.Insert(u.Title, u.Content, expiresInString)
 	assert.NoError(t, err)
 }
