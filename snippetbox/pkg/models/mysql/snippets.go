@@ -1,10 +1,8 @@
 package mysql
 
 import (
-	"context"
 	"database/sql"
 	"snippetbox/pkg/models"
-	"time"
 )
 
 type SnippetModel struct {
@@ -16,24 +14,22 @@ func (m *SnippetModel) Close() {
 }
 
 func (m *SnippetModel) Insert(title, content, expires string) (int, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	query := "INSERT OR UPDATE INTO snippets (title, content, created, expires) VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))"
-
-	stmt, err := m.DB.PrepareContext(ctx, query)
+	query := "INSERT INTO snippets (title, content, created, expires) VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))"
+	stmt, err := m.DB.Prepare(query)
 	if err != nil {
+		println("--- Error Preparing Statement ---")
 		return 0, err
 	}
 	defer stmt.Close()
 
-	result, err := stmt.ExecContext(ctx, title, content, expires)
-
+	result, err := stmt.Exec(title, content, expires)
 	if err != nil {
+		println("--- Error Executing Context ---")
 		return 0, err
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
+		println("--- Error Getting Last Insert ID ---")
 		return 0, err
 	}
 	return int(id), nil
