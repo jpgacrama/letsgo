@@ -14,7 +14,8 @@ func (m *SnippetModel) Close() {
 }
 
 func (m *SnippetModel) Insert(title, content, expires string) (int, error) {
-	query := "INSERT INTO snippets (title, content, created, expires) VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))"
+	query := `INSERT INTO snippets (title, content, created, expires)
+	VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))`
 	stmt, err := m.DB.Prepare(query)
 	if err != nil {
 		println("\t--- Insert(): Error Preparing Statement ---")
