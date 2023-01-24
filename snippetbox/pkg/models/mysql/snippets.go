@@ -63,19 +63,21 @@ func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
 	return s, nil
 }
 
-// func (m *SnippetDatabase) FindByID(id string) (*models.Snippet, error) {
-// 	user := new(models.Snippet)
+func (m *SnippetDatabase) FindByID(id string) (*models.Snippet, error) {
+	user := new(models.Snippet)
 
-// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-// 	defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-// 	err := m.DB.QueryRowContext(ctx, "SELECT id, name, email, phone FROM users WHERE id = ?", id).Scan(
-// 		&user.ID, &user.Name, &user.Email, &user.Phone)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return user, nil
-// }
+	err := m.DB.QueryRowContext(
+		ctx, "SELECT id, title, content, created, expires FROM snippets WHERE id = ?", id).Scan(
+		&user.ID, &user.Title, &user.Content, &user.Created, &user.Expires)
+	if err != nil {
+		m.ErrorLog.Println("\t--- FindByID(): Error Querying by ID ---")
+		return nil, err
+	}
+	return user, nil
+}
 
 func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 	return nil, nil

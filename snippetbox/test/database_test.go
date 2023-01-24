@@ -6,6 +6,7 @@ import (
 	"snippetbox/cmd/server"
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
+	"strconv"
 	"testing"
 	"time"
 
@@ -66,23 +67,23 @@ func TestInsert(t *testing.T) {
 	})
 }
 
-// func TestGet(t *testing.T) {
-// 	db, mock := NewMock()
-// 	infoLog, errorLog := server.CreateLoggers()
-// 	repo := &mysql.SnippetDatabase{
-// 		DB:       db,
-// 		InfoLog:  infoLog,
-// 		ErrorLog: errorLog}
-// 	defer func() {
-// 		repo.Close()
-// 	}()
-// 	t.Run("Get OK Case", func(t *testing.T) {
-// 		query := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) AND id = \\?"
-// 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-// 		mock.ExpectQuery(query).WithArgs(u.ID).WillReturnRows(rows)
+func TestGet(t *testing.T) {
+	db, mock := NewMock()
+	infoLog, errorLog := server.CreateLoggers()
+	repo := &mysql.SnippetDatabase{
+		DB:       db,
+		InfoLog:  infoLog,
+		ErrorLog: errorLog}
+	defer func() {
+		repo.Close()
+	}()
+	t.Run("Get OK Case", func(t *testing.T) {
+		query := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) AND id = \\?"
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		mock.ExpectQuery(query).WithArgs(u.ID).WillReturnRows(rows)
 
-// 		user, err := repo.FindByID(u.ID)
-// 		assert.Empty(t, user)
-// 		assert.Error(t, err)
-// 	})
-// }
+		user, err := repo.FindByID(strconv.Itoa(u.ID))
+		assert.Empty(t, user)
+		assert.Error(t, err)
+	})
+}
