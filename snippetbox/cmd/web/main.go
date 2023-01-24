@@ -56,8 +56,8 @@ func main() {
 			Addr:     addr,
 			InfoLog:  infoLog,
 			ErrorLog: errorLog,
-			Snippets: &mysql.SnippetModel{DB: db},
-			SqlRecord: &models.Record{
+			DB:       &mysql.SnippetDatabase{DB: db},
+			Snippet: &models.Snippet{
 				Title:   "O snail",
 				Content: "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa",
 				Expires: "7",

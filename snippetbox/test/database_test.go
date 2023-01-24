@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var u = &models.Record{
+var u = &models.Snippet{
 	ID:      1,
 	Title:   "Title",
 	Content: "Content",
@@ -32,7 +32,7 @@ func NewMock() (*sql.DB, sqlmock.Sqlmock) {
 func TestInsert(t *testing.T) {
 	t.Run("Insert OK Case", func(t *testing.T) {
 		db, mock := NewMock()
-		repo := &mysql.SnippetModel{DB: db}
+		repo := &mysql.SnippetDatabase{DB: db}
 		defer func() {
 			repo.Close()
 		}()
@@ -50,7 +50,7 @@ func TestInsert(t *testing.T) {
 	})
 	t.Run("Insert NOK Case", func(t *testing.T) {
 		db, mock := NewMock()
-		repo := &mysql.SnippetModel{DB: db}
+		repo := &mysql.SnippetDatabase{DB: db}
 		defer func() {
 			repo.Close()
 		}()

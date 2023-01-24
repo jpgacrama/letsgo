@@ -12,11 +12,11 @@ import (
 )
 
 type Application struct {
-	Addr      *string
-	InfoLog   *log.Logger
-	ErrorLog  *log.Logger
-	Snippets  *mysql.SnippetModel
-	SqlRecord *models.Record
+	Addr     *string
+	InfoLog  *log.Logger
+	ErrorLog *log.Logger
+	DB       *mysql.SnippetDatabase
+	Snippet  *models.Snippet
 }
 
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
@@ -55,22 +55,22 @@ func (app *Application) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if app.SqlRecord == nil {
+	if app.Snippet == nil {
 		app.ErrorLog.Println("Sql Record is not defined")
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
-	if app.Snippets == nil {
+	if app.DB == nil {
 		app.ErrorLog.Println("Snippets is not defined")
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
-	id, err := app.Snippets.Insert(
-		app.SqlRecord.Title,
-		app.SqlRecord.Content,
-		app.SqlRecord.Expires)
+	id, err := app.DB.Insert(
+		app.Snippet.Title,
+		app.Snippet.Content,
+		app.Snippet.Expires)
 	if err != nil {
 		app.serverError(w, err)
 		return
