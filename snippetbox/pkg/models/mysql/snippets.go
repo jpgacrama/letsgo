@@ -17,19 +17,19 @@ func (m *SnippetModel) Insert(title, content, expires string) (int, error) {
 	query := "INSERT INTO snippets (title, content, created, expires) VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))"
 	stmt, err := m.DB.Prepare(query)
 	if err != nil {
-		println("--- Error Preparing Statement ---")
+		println("\t--- Insert(): Error Preparing Statement ---")
 		return 0, err
 	}
 	defer stmt.Close()
 
 	result, err := stmt.Exec(title, content, expires)
 	if err != nil {
-		println("--- Error Executing Context ---")
+		println("\t--- Insert(): Error Executing Context ---")
 		return 0, err
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
-		println("--- Error Getting Last Insert ID ---")
+		println("\t--- Insert(): Getting Last Insert ID ---")
 		return 0, err
 	}
 	return int(id), nil
