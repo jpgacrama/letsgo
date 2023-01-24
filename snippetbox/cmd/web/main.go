@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"flag"
 	"log"
-	"os"
 	"snippetbox/cmd/server"
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
@@ -24,12 +23,6 @@ func parseUserInputs() (*string, *string) {
 	return addr, dsn
 }
 
-func createLoggers() (*log.Logger, *log.Logger) {
-	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-	return infoLog, errorLog
-}
-
 func openDB(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
@@ -44,7 +37,7 @@ func openDB(dsn string) (*sql.DB, error) {
 
 func main() {
 	addr, dsn := parseUserInputs()
-	infoLog, errorLog := createLoggers()
+	infoLog, errorLog := server.CreateLoggers()
 	db, err := openDB(*dsn)
 	if err != nil {
 		errorLog.Fatal(err)
@@ -56,7 +49,10 @@ func main() {
 			Addr:     addr,
 			InfoLog:  infoLog,
 			ErrorLog: errorLog,
-			DB:       &mysql.SnippetDatabase{DB: db},
+			DB: &mysql.SnippetDatabase{
+				DB:       db,
+				InfoLog:  infoLog,
+				ErrorLog: errorLog},
 			Snippet: &models.Snippet{
 				Title:   "O snail",
 				Content: "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa",

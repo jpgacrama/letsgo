@@ -2,11 +2,14 @@ package mysql
 
 import (
 	"database/sql"
+	"log"
 	"snippetbox/pkg/models"
 )
 
 type SnippetDatabase struct {
-	DB *sql.DB
+	DB       *sql.DB
+	InfoLog  *log.Logger
+	ErrorLog *log.Logger
 }
 
 func (m *SnippetDatabase) Close() {

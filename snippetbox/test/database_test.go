@@ -3,6 +3,7 @@ package snippetbox_test
 import (
 	"database/sql"
 	"log"
+	"snippetbox/cmd/server"
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
 	"testing"
@@ -30,13 +31,16 @@ func NewMock() (*sql.DB, sqlmock.Sqlmock) {
 }
 
 func TestInsert(t *testing.T) {
+	db, mock := NewMock()
+	infoLog, errorLog := server.CreateLoggers()
+	repo := &mysql.SnippetDatabase{
+		DB:       db,
+		InfoLog:  infoLog,
+		ErrorLog: errorLog}
+	defer func() {
+		repo.Close()
+	}()
 	t.Run("Insert OK Case", func(t *testing.T) {
-		db, mock := NewMock()
-		repo := &mysql.SnippetDatabase{DB: db}
-		defer func() {
-			repo.Close()
-		}()
-
 		query := "INSERT INTO snippets \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
 
 		prep := mock.ExpectPrepare(query)
@@ -49,12 +53,6 @@ func TestInsert(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("Insert NOK Case", func(t *testing.T) {
-		db, mock := NewMock()
-		repo := &mysql.SnippetDatabase{DB: db}
-		defer func() {
-			repo.Close()
-		}()
-
 		query := "INSERT OR UPDATE INTO snippet \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
 
 		prep := mock.ExpectPrepare(query)
