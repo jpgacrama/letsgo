@@ -6,22 +6,17 @@ import (
 	"log"
 	"net/http"
 	"runtime/debug"
+	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
 	"strconv"
 )
-
-type Record struct {
-	Title   string
-	Content string
-	Expires string
-}
 
 type Application struct {
 	Addr      *string
 	InfoLog   *log.Logger
 	ErrorLog  *log.Logger
 	Snippets  *mysql.SnippetModel
-	SqlRecord *Record
+	SqlRecord *models.Record
 }
 
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {

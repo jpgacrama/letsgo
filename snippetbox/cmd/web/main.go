@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"snippetbox/cmd/server"
+	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -56,7 +57,7 @@ func main() {
 			InfoLog:  infoLog,
 			ErrorLog: errorLog,
 			Snippets: &mysql.SnippetModel{DB: db},
-			SqlRecord: &server.Record{
+			SqlRecord: &models.Record{
 				Title:   "O snail",
 				Content: "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa",
 				Expires: "7",
