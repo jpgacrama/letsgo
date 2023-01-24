@@ -48,4 +48,22 @@ func TestInsert(t *testing.T) {
 		_, err := repo.Insert(u.Title, u.Content, u.Expires)
 		assert.NoError(t, err)
 	})
+	t.Run("Insert NOK Case", func(t *testing.T) {
+		db, mock := NewMock()
+		repo := &mysql.SnippetModel{DB: db}
+		defer func() {
+			repo.Close()
+		}()
+
+		query := "INSERT OR UPDATE INTO snippet \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
+
+		prep := mock.ExpectPrepare(query)
+		prep.ExpectExec().WithArgs(
+			u.Title,
+			u.Content,
+			u.Expires).WillReturnResult(sqlmock.NewResult(0, 0))
+
+		_, err := repo.Insert(u.Title, u.Content, u.Expires)
+		assert.Error(t, err)
+	})
 }
