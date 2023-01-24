@@ -30,20 +30,22 @@ func NewMock() (*sql.DB, sqlmock.Sqlmock) {
 }
 
 func TestInsert(t *testing.T) {
-	db, mock := NewMock()
-	repo := &mysql.SnippetModel{DB: db}
-	defer func() {
-		repo.Close()
-	}()
+	t.Run("Insert OK Case", func(t *testing.T) {
+		db, mock := NewMock()
+		repo := &mysql.SnippetModel{DB: db}
+		defer func() {
+			repo.Close()
+		}()
 
-	query := "INSERT OR UPDATE INTO snippets \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
+		query := "INSERT OR UPDATE INTO snippets \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
 
-	prep := mock.ExpectPrepare(query)
-	prep.ExpectExec().WithArgs(
-		u.Title,
-		u.Content,
-		u.Expires).WillReturnResult(sqlmock.NewResult(0, 1))
+		prep := mock.ExpectPrepare(query)
+		prep.ExpectExec().WithArgs(
+			u.Title,
+			u.Content,
+			u.Expires).WillReturnResult(sqlmock.NewResult(0, 1))
 
-	_, err := repo.Insert(u.Title, u.Content, u.Expires)
-	assert.NoError(t, err)
+		_, err := repo.Insert(u.Title, u.Content, u.Expires)
+		assert.NoError(t, err)
+	})
 }
