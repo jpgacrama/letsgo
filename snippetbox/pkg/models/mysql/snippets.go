@@ -1,9 +1,11 @@
 package mysql
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"snippetbox/pkg/models"
+	"time"
 )
 
 type SnippetDatabase struct {
@@ -18,8 +20,12 @@ func (m *SnippetDatabase) Close() {
 
 func (m *SnippetDatabase) Insert(title, content, expires string) (int, error) {
 	m.InfoLog.Println("--- Inside Insert() ---")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	query := `INSERT INTO snippets (title, content, created, expires)
 	VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))`
+
 	stmt, err := m.DB.Prepare(query)
 	if err != nil {
 		m.ErrorLog.Println("\t--- Insert(): Error Preparing Statement ---")
@@ -27,7 +33,7 @@ func (m *SnippetDatabase) Insert(title, content, expires string) (int, error) {
 	}
 	defer stmt.Close()
 
-	result, err := stmt.Exec(title, content, expires)
+	result, err := stmt.ExecContext(ctx, title, content, expires)
 	if err != nil {
 		m.ErrorLog.Println("\t--- Insert(): Error Executing Context ---")
 		return 0, err
@@ -56,6 +62,20 @@ func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
 	}
 	return s, nil
 }
+
+// func (m *SnippetDatabase) FindByID(id string) (*models.Snippet, error) {
+// 	user := new(models.Snippet)
+
+// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+// 	defer cancel()
+
+// 	err := m.DB.QueryRowContext(ctx, "SELECT id, name, email, phone FROM users WHERE id = ?", id).Scan(
+// 		&user.ID, &user.Name, &user.Email, &user.Phone)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return user, nil
+// }
 
 func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 	return nil, nil
