@@ -6,7 +6,6 @@ import (
 	"snippetbox/cmd/server"
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
-	"strconv"
 	"testing"
 	"time"
 
@@ -15,7 +14,7 @@ import (
 )
 
 var u = &models.Snippet{
-	ID:      1,
+	ID:      0,
 	Title:   "Title",
 	Content: "Content",
 	Created: time.Now(),
@@ -77,13 +76,26 @@ func TestGet(t *testing.T) {
 	defer func() {
 		repo.Close()
 	}()
-	t.Run("Get OK Case", func(t *testing.T) {
-		query := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) AND id = \\?"
-		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		mock.ExpectQuery(query).WithArgs(u.ID).WillReturnRows(rows)
 
-		user, err := repo.FindByID(strconv.Itoa(u.ID))
-		assert.Empty(t, user)
-		assert.Error(t, err)
+	t.Run("Get OK Case", func(t *testing.T) {
+		insertQuery := "INSERT INTO snippets \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
+
+		prep := mock.ExpectPrepare(insertQuery)
+		prep.ExpectExec().WithArgs(
+			u.Title,
+			u.Content,
+			u.Expires).WillReturnResult(sqlmock.NewResult(0, 1))
+
+		id, err := repo.Insert(u.Title, u.Content, u.Expires)
+		assert.NoError(t, err)
+		assert.EqualValues(t, u.ID, id)
+
+		getQuery := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) AND id \\= \\?"
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		mock.ExpectQuery(getQuery).WithArgs(u.ID).WillReturnRows(rows)
+
+		output, err := repo.Get(u.ID)
+		assert.NotNil(t, output)
+		assert.NoError(t, err)
 	})
 }
