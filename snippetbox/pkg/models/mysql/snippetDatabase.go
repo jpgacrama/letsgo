@@ -88,6 +88,11 @@ func (m *SnippetDatabase) Insert(title, content, expires string) (int, error) {
 func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
 	m.InfoLog.Println("--- Inside Get() ---")
 	transaction, err := m.initializeContext()
+	if err != nil {
+		m.ErrorLog.Printf("\n\t--- Get(): Error Initializing Context: %s ---", err)
+		return nil, err
+
+	}
 	stmt, err := transaction.PrepareContext(m.ctx, `SELECT id, title, content, created, expires FROM snippets
 	WHERE expires > UTC_TIMESTAMP() AND id = ?`)
 	if err != nil {
