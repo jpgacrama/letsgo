@@ -48,10 +48,7 @@ func (m *SnippetDatabase) Insert(title, content, expires string) (int, error) {
 func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
 	m.InfoLog.Println("--- Inside Get() ---")
 	m.initializeContext()
-	query := `SELECT id, title, content, created, expires FROM snippets
-	WHERE expires > UTC_TIMESTAMP() AND id = ?`
-
-	stmt, err := m.DB.Prepare(query)
+	stmt, err := m.DB.Prepare("SELECT ...")
 	if err != nil {
 		m.ErrorLog.Printf("\n\t--- Get(): Error Preparing Statement: %s ---", err)
 		return nil, err
@@ -69,9 +66,8 @@ func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
 		return nil, err
 	default:
 		log.Printf("ID is %v, created on %s\n", s.ID, s.Created)
-
+		return s, nil
 	}
-	return s, nil
 }
 
 func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {

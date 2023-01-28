@@ -44,7 +44,17 @@ func (app *Application) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w)
 		return
 	}
-	fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
+
+	result, err := app.DB.Get(id)
+	if err == models.ErrNoRecord {
+		app.notFound(w)
+		return
+	} else if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	fmt.Fprintf(w, "%v", result)
 }
 
 func (app *Application) CreateSnippet(w http.ResponseWriter, r *http.Request) {
