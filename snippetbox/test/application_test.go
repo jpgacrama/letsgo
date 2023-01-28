@@ -81,6 +81,27 @@ func TestStaticPage(t *testing.T) {
 	})
 }
 
+func TestShowSnippet(t *testing.T) {
+	addr := ":4000"
+	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	app := &server.Application{
+		Addr:     &addr,
+		InfoLog:  infoLog,
+		ErrorLog: errorLog,
+	}
+	t.Run("checking show snippet OK Case", func(t *testing.T) {
+		server, err := server.CreateServer(app, templateFiles...)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodGet, "snippet?id=1")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+}
+
 func newRequest(requestType, str string) *http.Request {
 	req := httptest.NewRequest(requestType, fmt.Sprintf("/%s", str), nil)
 	return req
