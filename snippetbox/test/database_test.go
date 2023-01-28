@@ -79,6 +79,7 @@ func TestGet(t *testing.T) {
 
 	t.Run("Get() OK Case", func(t *testing.T) {
 		query := "SELECT ..."
+		mock.ExpectBegin()
 		prep := mock.ExpectPrepare(query)
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "1")
@@ -90,6 +91,7 @@ func TestGet(t *testing.T) {
 	})
 	t.Run("Get() NOK Case", func(t *testing.T) {
 		query := "SELECT ..."
+		mock.ExpectBegin()
 		prep := mock.ExpectPrepare(query)
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "1")
