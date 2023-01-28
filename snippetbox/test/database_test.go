@@ -117,9 +117,9 @@ func TestLatest(t *testing.T) {
 		prep := mock.ExpectPrepare(query)
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "1")
-		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+		prep.ExpectQuery().WillReturnRows(rows)
 
-		output, err := repo.Get(sampleDatabaseContent.ID)
+		output, err := repo.Latest()
 		assert.NotNil(t, output)
 		assert.NoError(t, err)
 	})

@@ -19,10 +19,19 @@ func (m *SnippetDatabase) Close() {
 }
 
 func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
-	stmt := `SELECT id, title, content, created, expires FROM snippets
-    WHERE expires > UTC_TIMESTAMP() ORDER BY created DESC LIMIT 10`
-	rows, err := m.DB.Query(stmt)
+	m.InfoLog.Println("--- Inside Latest() ---")
+	m.initializeContext()
+	stmt, err := m.DB.Prepare(`SELECT id, title, content, created, expires FROM snippets
+    WHERE expires > UTC_TIMESTAMP() ORDER BY created DESC LIMIT 10`)
 	if err != nil {
+		m.ErrorLog.Printf("\n\t--- Latest(): Error Preparing Statement: %s ---", err)
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(m.ctx)
+	if err != nil {
+		m.ErrorLog.Printf("\n\t--- Latest(): Error Querying Statement: %s ---", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -32,6 +41,7 @@ func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 		s := &models.Snippet{}
 		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
 		if err != nil {
+			m.ErrorLog.Printf("\n\t--- Latest(): Error Scanning: %s ---", err)
 			return nil, err
 		}
 		snippets = append(snippets, s)
