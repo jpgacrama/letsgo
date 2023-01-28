@@ -2,12 +2,15 @@ package snippetbox_test
 
 import (
 	"fmt"
+	"github.com/DATA-DOG/go-sqlmock"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"snippetbox/cmd/server"
+	"snippetbox/pkg/models/mysql"
 	"testing"
+	"time"
 )
 
 var templateFiles = []string{
@@ -85,10 +88,19 @@ func TestShowSnippet(t *testing.T) {
 	addr := ":4000"
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	db, mock := NewMock()
+	repo := &mysql.SnippetDatabase{
+		DB:       db,
+		InfoLog:  infoLog,
+		ErrorLog: errorLog}
+	defer func() {
+		repo.Close()
+	}()
 	app := &server.Application{
 		Addr:     &addr,
 		InfoLog:  infoLog,
 		ErrorLog: errorLog,
+		DB:       repo,
 	}
 	t.Run("checking show snippet OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app, templateFiles...)
@@ -97,6 +109,15 @@ func TestShowSnippet(t *testing.T) {
 		}
 		request := newRequest(http.MethodGet, "snippet?id=1")
 		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		sampleDatabaseContent.ID = 1
+		query := "SELECT ..."
+		prep := mock.ExpectPrepare(query)
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
 	})
