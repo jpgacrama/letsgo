@@ -77,7 +77,7 @@ func TestGet(t *testing.T) {
 		repo.Close()
 	}()
 
-	t.Run("Get OK Case", func(t *testing.T) {
+	t.Run("Get() OK Case", func(t *testing.T) {
 		query := "SELECT ..."
 		prep := mock.ExpectPrepare(query)
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
@@ -88,7 +88,7 @@ func TestGet(t *testing.T) {
 		assert.NotNil(t, output)
 		assert.NoError(t, err)
 	})
-	t.Run("Get NOK Case", func(t *testing.T) {
+	t.Run("Get() NOK Case", func(t *testing.T) {
 		query := "SELECT ..."
 		prep := mock.ExpectPrepare(query)
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
@@ -99,5 +99,28 @@ func TestGet(t *testing.T) {
 		assert.Nil(t, output)
 		prep.ExpectQuery().WithArgs().WillReturnError(err)
 		assert.Error(t, err)
+	})
+}
+
+func TestLatest(t *testing.T) {
+	db, mock := NewMock()
+	infoLog, errorLog := server.CreateLoggers()
+	repo := &mysql.SnippetDatabase{
+		DB:       db,
+		InfoLog:  infoLog,
+		ErrorLog: errorLog}
+	defer func() {
+		repo.Close()
+	}()
+	t.Run("Latest() OK Case", func(t *testing.T) {
+		query := "SELECT ..."
+		prep := mock.ExpectPrepare(query)
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+
+		output, err := repo.Get(sampleDatabaseContent.ID)
+		assert.NotNil(t, output)
+		assert.NoError(t, err)
 	})
 }
