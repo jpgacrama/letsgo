@@ -6,25 +6,21 @@ import (
 	"log"
 	"net/http"
 	"runtime/debug"
+	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
 	"strconv"
 )
 
-type Record struct {
-	Title   string
-	Content string
-	Expires string
-}
-
 type Application struct {
-	Addr      *string
-	InfoLog   *log.Logger
-	ErrorLog  *log.Logger
-	Snippets  *mysql.SnippetModel
-	SqlRecord *Record
+	Addr     *string
+	InfoLog  *log.Logger
+	ErrorLog *log.Logger
+	DB       *mysql.SnippetDatabase
+	Snippet  *models.Snippet
 }
 
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
+	app.InfoLog.Println("----- Inside Home() ---- ")
 	if r.URL.Path != "/" {
 		app.notFound(w)
 		return
@@ -42,6 +38,7 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) ShowSnippet(w http.ResponseWriter, r *http.Request) {
+	app.InfoLog.Println("----- Inside ShowSnippet() ---- ")
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
 		app.notFound(w)
@@ -51,15 +48,29 @@ func (app *Application) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) CreateSnippet(w http.ResponseWriter, r *http.Request) {
+	app.InfoLog.Println("----- Inside CreateSnippet() ---- ")
 	if r.Method != "POST" {
 		w.Header().Set("Allow", "POST")
 		app.clientError(w, http.StatusMethodNotAllowed)
 		return
 	}
-	id, err := app.Snippets.Insert(
-		app.SqlRecord.Title,
-		app.SqlRecord.Content,
-		app.SqlRecord.Expires)
+
+	if app.Snippet == nil {
+		app.ErrorLog.Println("Sql Record is not defined")
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	if app.DB == nil {
+		app.ErrorLog.Println("Snippets is not defined")
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	id, err := app.DB.Insert(
+		app.Snippet.Title,
+		app.Snippet.Content,
+		app.Snippet.Expires)
 	if err != nil {
 		app.serverError(w, err)
 		return

@@ -4,24 +4,23 @@ import (
 	"database/sql"
 	"flag"
 	"log"
-	"os"
 	"snippetbox/cmd/server"
+	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
 
 	_ "github.com/go-sql-driver/mysql"
 )
+
+type application struct {
+	errorLog *log.Logger
+	infoLog  *log.Logger
+}
 
 func parseUserInputs() (*string, *string) {
 	addr := flag.String("addr", ":4000", "HTTP network address")
 	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
 	flag.Parse()
 	return addr, dsn
-}
-
-func createLoggers() (*log.Logger, *log.Logger) {
-	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-	return infoLog, errorLog
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -38,7 +37,7 @@ func openDB(dsn string) (*sql.DB, error) {
 
 func main() {
 	addr, dsn := parseUserInputs()
-	infoLog, errorLog := createLoggers()
+	infoLog, errorLog := server.CreateLoggers()
 	db, err := openDB(*dsn)
 	if err != nil {
 		errorLog.Fatal(err)
@@ -50,7 +49,15 @@ func main() {
 			Addr:     addr,
 			InfoLog:  infoLog,
 			ErrorLog: errorLog,
-			Snippets: &mysql.SnippetModel{DB: db},
+			DB: &mysql.SnippetDatabase{
+				DB:       db,
+				InfoLog:  infoLog,
+				ErrorLog: errorLog},
+			Snippet: &models.Snippet{
+				Title:   "O snail",
+				Content: "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa",
+				Expires: "7",
+			},
 		})
 	if err == nil {
 		infoLog.Printf("Starting server on %s", *addr)
