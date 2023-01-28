@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"html/template"
+	// "html/template"
 	"log"
 	"net/http"
 	"runtime/debug"
@@ -26,15 +26,25 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ts, err := template.ParseFiles(templateFiles...)
+	s, err := app.DB.Latest()
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
-	err = ts.Execute(w, nil)
-	if err != nil {
-		app.serverError(w, err)
+
+	for _, snippet := range s {
+		fmt.Fprintf(w, "%v\n", snippet)
 	}
+
+	// ts, err := template.ParseFiles(templateFiles...)
+	// if err != nil {
+	// 	app.serverError(w, err)
+	// 	return
+	// }
+	// err = ts.Execute(w, nil)
+	// if err != nil {
+	// 	app.serverError(w, err)
+	// }
 }
 
 func (app *Application) ShowSnippet(w http.ResponseWriter, r *http.Request) {
