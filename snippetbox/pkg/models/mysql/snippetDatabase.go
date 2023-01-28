@@ -60,27 +60,32 @@ func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 
 func (m *SnippetDatabase) Insert(title, content, expires string) (int, error) {
 	m.InfoLog.Println("--- Inside Insert() ---")
-	m.initializeContext()
-
-	query := `INSERT INTO snippets (title, content, created, expires)
-	VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))`
-
-	stmt, err := m.DB.Prepare(query)
+	transaction, err := m.initializeContext()
+	errorValue := -1
 	if err != nil {
-		m.ErrorLog.Printf("\n\t--- Insert(): Error Preparing Statement: %s ---", err)
-		return 0, err
+		m.ErrorLog.Printf("\n\t--- Get(): Error Initializing Context: %s ---", err)
+		return errorValue, err
+
+	}
+
+	stmt, err := transaction.PrepareContext(m.ctx, `INSERT INTO snippets (title, content, created, expires)
+	VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))`)
+	if err != nil {
+		m.ErrorLog.Printf("\n\t--- Get(): Error Preparing Statement: %s ---", err)
+		return errorValue, err
 	}
 	defer stmt.Close()
 
 	result, err := stmt.ExecContext(m.ctx, title, content, expires)
 	if err != nil {
 		m.ErrorLog.Println("\n\t--- Insert(): Error Executing Context ---")
-		return 0, err
+		transaction.Rollback()
+		return errorValue, err
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
 		m.ErrorLog.Println("\n\t--- Insert(): Error Getting Last Insert ID ---")
-		return 0, err
+		return errorValue, err
 	}
 	return int(id), nil
 }

@@ -43,6 +43,7 @@ func TestInsert(t *testing.T) {
 	t.Run("Insert OK Case", func(t *testing.T) {
 		query := "INSERT INTO snippets \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
 
+		mock.ExpectBegin()
 		prep := mock.ExpectPrepare(query)
 		prep.ExpectExec().WithArgs(
 			sampleDatabaseContent.Title,
@@ -55,6 +56,7 @@ func TestInsert(t *testing.T) {
 	t.Run("Insert NOK Case", func(t *testing.T) {
 		query := "INSERT OR UPDATE INTO snippet \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
 
+		mock.ExpectBegin()
 		prep := mock.ExpectPrepare(query)
 		prep.ExpectExec().WithArgs(
 			sampleDatabaseContent.Title,
