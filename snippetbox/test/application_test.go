@@ -48,6 +48,7 @@ func TestHomePage(t *testing.T) {
 		// Adding ExpectPrepare to DB Expectations
 		sampleDatabaseContent.ID = 1
 		query := "SELECT ..."
+		mock.ExpectBegin()
 		prep := mock.ExpectPrepare(query)
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "1")

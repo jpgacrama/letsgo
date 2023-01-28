@@ -20,8 +20,14 @@ func (m *SnippetDatabase) Close() {
 
 func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 	m.InfoLog.Println("--- Inside Latest() ---")
-	m.initializeContext()
-	stmt, err := m.DB.Prepare(`SELECT id, title, content, created, expires FROM snippets
+	transaction, err := m.initializeContext()
+	if err != nil {
+		m.ErrorLog.Printf("\n\t--- Get(): Error Initializing Context: %s ---", err)
+		return nil, err
+
+	}
+
+	stmt, err := transaction.PrepareContext(m.ctx, `SELECT id, title, content, created, expires FROM snippets
     WHERE expires > UTC_TIMESTAMP() ORDER BY created DESC LIMIT 10`)
 	if err != nil {
 		m.ErrorLog.Printf("\n\t--- Latest(): Error Preparing Statement: %s ---", err)
@@ -32,6 +38,7 @@ func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 	rows, err := stmt.QueryContext(m.ctx)
 	if err != nil {
 		m.ErrorLog.Printf("\n\t--- Latest(): Error Querying Statement: %s ---", err)
+		transaction.Rollback()
 		return nil, err
 	}
 	defer rows.Close()
