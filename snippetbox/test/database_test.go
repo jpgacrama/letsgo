@@ -88,4 +88,16 @@ func TestGet(t *testing.T) {
 		assert.NotNil(t, output)
 		assert.NoError(t, err)
 	})
+	t.Run("Get NOK Case", func(t *testing.T) {
+		query := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) AND id \\= \\?"
+		prep := mock.ExpectPrepare(query)
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+
+		wrongId := 2
+		output, err := repo.Get(wrongId)
+		assert.Nil(t, output)
+		prep.ExpectQuery().WithArgs().WillReturnError(err)
+		assert.Error(t, err)
+	})
 }
