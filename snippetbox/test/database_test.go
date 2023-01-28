@@ -78,21 +78,15 @@ func TestGet(t *testing.T) {
 	}()
 
 	t.Run("Get OK Case", func(t *testing.T) {
-		insertQuery := "INSERT INTO snippets \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
-
-		prep := mock.ExpectPrepare(insertQuery)
+		query := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) AND id \\= \\?"
+		prep := mock.ExpectPrepare(query)
 		prep.ExpectExec().WithArgs(
 			u.Title,
 			u.Content,
 			u.Expires).WillReturnResult(sqlmock.NewResult(0, 1))
 
-		id, err := repo.Insert(u.Title, u.Content, u.Expires)
-		assert.NoError(t, err)
-		assert.EqualValues(t, u.ID, id)
-
-		getQuery := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) AND id \\= \\?"
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		mock.ExpectQuery(getQuery).WithArgs(u.ID).WillReturnRows(rows)
+		prep.ExpectQuery().WithArgs(u.ID).WillReturnRows(rows)
 
 		output, err := repo.Get(u.ID)
 		assert.NotNil(t, output)
