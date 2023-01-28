@@ -121,6 +121,25 @@ func TestShowSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
 	})
+	t.Run("checking show snippet NOK Case", func(t *testing.T) {
+		server, err := server.CreateServer(app, templateFiles...)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodGet, "snippet?id=0")
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		sampleDatabaseContent.ID = 0
+		query := "SELECT ..."
+		prep := mock.ExpectPrepare(query)
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusNotFound)
+	})
 }
 
 func newRequest(requestType, str string) *http.Request {
