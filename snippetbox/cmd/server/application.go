@@ -28,6 +28,7 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 
 	s, err := app.DB.Latest()
 	if err != nil {
+		app.ErrorLog.Printf("\n\t-----Home(): Error Found: %s -----", err)
 		app.serverError(w, err)
 		return
 	}
