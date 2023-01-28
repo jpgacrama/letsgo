@@ -18,6 +18,36 @@ func (m *SnippetDatabase) Close() {
 	m.DB.Close()
 }
 
+func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
+	stmt := `SELECT id, title, content, created, expires FROM snippets
+    WHERE expires > UTC_TIMESTAMP() ORDER BY created DESC LIMIT 10`
+	rows, err := m.DB.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	snippets := []*models.Snippet{}
+	for rows.Next() {
+		s := &models.Snippet{}
+		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+		if err != nil {
+			return nil, err
+		}
+		snippets = append(snippets, s)
+	}
+
+	// When the rows.Next() loop has finished we call rows.Err() to retrieve any
+	// error that was encountered during the iteration. It's important to
+	// call this - don't assume that a successful iteration was completed
+	// over the whole resultset.
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return snippets, nil
+}
+
 func (m *SnippetDatabase) Insert(title, content, expires string) (int, error) {
 	m.InfoLog.Println("--- Inside Insert() ---")
 	m.initializeContext()
@@ -69,10 +99,6 @@ func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
 		log.Printf("ID is %v, created on %s\n", s.ID, s.Created)
 		return s, nil
 	}
-}
-
-func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
-	return nil, nil
 }
 
 func (m *SnippetDatabase) initializeContext() {
