@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var u = &models.Snippet{
+var sampleDatabaseContent = &models.Snippet{
 	ID:      0,
 	Title:   "Title",
 	Content: "Content",
@@ -45,11 +45,11 @@ func TestInsert(t *testing.T) {
 
 		prep := mock.ExpectPrepare(query)
 		prep.ExpectExec().WithArgs(
-			u.Title,
-			u.Content,
-			u.Expires).WillReturnResult(sqlmock.NewResult(0, 1))
+			sampleDatabaseContent.Title,
+			sampleDatabaseContent.Content,
+			sampleDatabaseContent.Expires).WillReturnResult(sqlmock.NewResult(0, 1))
 
-		_, err := repo.Insert(u.Title, u.Content, u.Expires)
+		_, err := repo.Insert(sampleDatabaseContent.Title, sampleDatabaseContent.Content, sampleDatabaseContent.Expires)
 		assert.NoError(t, err)
 	})
 	t.Run("Insert NOK Case", func(t *testing.T) {
@@ -57,11 +57,11 @@ func TestInsert(t *testing.T) {
 
 		prep := mock.ExpectPrepare(query)
 		prep.ExpectExec().WithArgs(
-			u.Title,
-			u.Content,
-			u.Expires).WillReturnResult(sqlmock.NewResult(0, 0))
+			sampleDatabaseContent.Title,
+			sampleDatabaseContent.Content,
+			sampleDatabaseContent.Expires).WillReturnResult(sqlmock.NewResult(0, 0))
 
-		_, err := repo.Insert(u.Title, u.Content, u.Expires)
+		_, err := repo.Insert(sampleDatabaseContent.Title, sampleDatabaseContent.Content, sampleDatabaseContent.Expires)
 		assert.Error(t, err)
 	})
 }
@@ -80,15 +80,11 @@ func TestGet(t *testing.T) {
 	t.Run("Get OK Case", func(t *testing.T) {
 		query := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) AND id \\= \\?"
 		prep := mock.ExpectPrepare(query)
-		prep.ExpectExec().WithArgs(
-			u.Title,
-			u.Content,
-			u.Expires).WillReturnResult(sqlmock.NewResult(0, 1))
-
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		prep.ExpectQuery().WithArgs(u.ID).WillReturnRows(rows)
+		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
 
-		output, err := repo.Get(u.ID)
+		output, err := repo.Get(sampleDatabaseContent.ID)
 		assert.NotNil(t, output)
 		assert.NoError(t, err)
 	})

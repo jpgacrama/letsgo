@@ -68,7 +68,7 @@ func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
 		m.ErrorLog.Print("\n\t--- Get(): Error Querying:", err, " ---")
 		return nil, err
 	default:
-		log.Printf("ID is %q, created on %s\n", s.ID, s.Created)
+		log.Printf("ID is %v, created on %s\n", s.ID, s.Created)
 
 	}
 	return s, nil
