@@ -48,7 +48,8 @@ func (m *SnippetDatabase) Insert(title, content, expires string) (int, error) {
 func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
 	m.InfoLog.Println("--- Inside Get() ---")
 	m.initializeContext()
-	stmt, err := m.DB.Prepare("SELECT ...")
+	stmt, err := m.DB.Prepare(`SELECT id, title, content, created, expires FROM snippets
+	WHERE expires > UTC_TIMESTAMP() AND id = ?`)
 	if err != nil {
 		m.ErrorLog.Printf("\n\t--- Get(): Error Preparing Statement: %s ---", err)
 		return nil, err
