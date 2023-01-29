@@ -71,16 +71,20 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := app.SnippetModel.Get(id)
-	if err == models.ErrNoRecord {
+	snippetContents, err := app.SnippetModel.Get(id)
+	switch {
+	case err == models.ErrNoRecord:
 		app.ErrorLog.Printf("\n\t---- showSnippet() error: %s ----", err)
 		app.notFound(w)
 		return
-	} else if err != nil {
+	case err != nil:
 		app.ErrorLog.Printf("\n\t---- showSnippet() error: %s ----", err)
 		app.serverError(w, err)
 		return
 	}
+
+	// Create an instance of a templateData struct holding the snippet data.
+	data := &templateData{Snippet: snippetContents}
 
 	ts, err := template.ParseFiles(showSnippetTemplateFiles...)
 	if err != nil {
@@ -89,7 +93,7 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = ts.Execute(w, s)
+	err = ts.Execute(w, data)
 	if err != nil {
 		app.ErrorLog.Printf("showSnippet() error: %s", err)
 		app.serverError(w, err)
