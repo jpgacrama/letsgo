@@ -34,7 +34,7 @@ func TestInsert(t *testing.T) {
 	db, mock := NewMock()
 	infoLog, errorLog := server.CreateLoggers()
 
-	// New mocks due to newSnippetModel() factory
+	// New mocks due to NewSnippetModel() factory
 	mock.ExpectBegin()
 	_ = mock.ExpectPrepare("SELECT ...") // SELECT for Latest Statement
 	query := "INSERT INTO snippets \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
@@ -82,6 +82,15 @@ func TestInsert(t *testing.T) {
 func TestGet(t *testing.T) {
 	db, mock := NewMock()
 	infoLog, errorLog := server.CreateLoggers()
+
+	// New mocks due to NewSnippetModel() factory
+	mock.ExpectBegin()
+	_ = mock.ExpectPrepare("SELECT ...") // SELECT for Latest Statement
+	_ = mock.ExpectPrepare("INSERT ...")
+
+	query := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) AND id \\= \\?"
+	prep := mock.ExpectPrepare(query) // SELECT for just one of the items
+
 	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
 		if err == nil {
@@ -98,9 +107,6 @@ func TestGet(t *testing.T) {
 	}
 
 	t.Run("Get() OK Case", func(t *testing.T) {
-		query := "SELECT ..."
-		mock.ExpectBegin()
-		prep := mock.ExpectPrepare(query)
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "1")
 		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
@@ -110,9 +116,6 @@ func TestGet(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("Get() NOK Case", func(t *testing.T) {
-		query := "SELECT ..."
-		mock.ExpectBegin()
-		prep := mock.ExpectPrepare(query)
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "1")
 

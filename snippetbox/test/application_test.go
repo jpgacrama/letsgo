@@ -27,7 +27,7 @@ func TestHomePage(t *testing.T) {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	db, mock := NewMock()
 
-	// New mocks due to newSnippetModel() factory
+	// New mocks due to NewSnippetModel() factory
 	mock.ExpectBegin()
 	_ = mock.ExpectPrepare("SELECT ...") // SELECT for Latest Statement
 	_ = mock.ExpectPrepare("INSERT ...")
@@ -121,7 +121,7 @@ func TestShowSnippet(t *testing.T) {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	db, mock := NewMock()
 
-	// New mocks due to newSnippetModel() factory
+	// New mocks due to NewSnippetModel() factory
 	mock.ExpectBegin()
 	_ = mock.ExpectPrepare("SELECT ...") // SELECT for Latest Statement
 	_ = mock.ExpectPrepare("INSERT ...")
