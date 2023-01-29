@@ -52,11 +52,11 @@ func main() {
 
 	server, err := server.CreateServer(
 		&server.Application{
-			Addr:     addr,
-			InfoLog:  infoLog,
-			ErrorLog: errorLog,
-			DB:       snippetModel,
-			Snippet: &models.SnippetContents{
+			Addr:         addr,
+			InfoLog:      infoLog,
+			ErrorLog:     errorLog,
+			SnippetModel: snippetModel,
+			SnippetContents: &models.SnippetContents{
 				Title:   "O snail",
 				Content: "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa",
 				Expires: "7",

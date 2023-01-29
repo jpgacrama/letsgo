@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	// "html/template"
+	"html/template"
 	"log"
 	"net/http"
 	"runtime/debug"
@@ -12,21 +12,33 @@ import (
 )
 
 type Application struct {
-	Addr     *string
-	InfoLog  *log.Logger
-	ErrorLog *log.Logger
-	DB       *mysql.SnippetModel
-	Snippet  *models.SnippetContents
+	Addr            *string
+	InfoLog         *log.Logger
+	ErrorLog        *log.Logger
+	SnippetModel    *mysql.SnippetModel
+	SnippetContents *models.SnippetContents
 }
 
-func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
+var homePageTemplateFiles = []string{
+	"./ui/html/home.page.tmpl",
+	"./ui/html/base.layout.tmpl",
+	"./ui/html/footer.partial.tmpl",
+}
+
+var showSnippetTemplateFiles = []string{
+	"./ui/html/show.page.tmpl",
+	"./ui/html/base.layout.tmpl",
+	"./ui/html/footer.partial.tmpl",
+}
+
+func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	app.InfoLog.Println("----- Inside Home() ---- ")
 	if r.URL.Path != "/" {
 		app.notFound(w)
 		return
 	}
 
-	s, err := app.DB.Latest()
+	s, err := app.SnippetModel.Latest()
 	if err != nil {
 		app.ErrorLog.Printf("\n\t-----Home(): Error Found: %s -----", err)
 		app.serverError(w, err)
@@ -37,26 +49,25 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "%v\n", snippet)
 	}
 
-	// ts, err := template.ParseFiles(templateFiles...)
-	// if err != nil {
-	// 	app.serverError(w, err)
-	// 	return
-	// }
-	// err = ts.Execute(w, nil)
-	// if err != nil {
-	// 	app.serverError(w, err)
-	// }
+	ts, err := template.ParseFiles(homePageTemplateFiles...)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	err = ts.Execute(w, nil)
+	if err != nil {
+		app.serverError(w, err)
+	}
 }
 
-func (app *Application) ShowSnippet(w http.ResponseWriter, r *http.Request) {
-	app.InfoLog.Println("----- Inside ShowSnippet() ---- ")
+func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
 		app.notFound(w)
 		return
 	}
 
-	result, err := app.DB.Get(id)
+	s, err := app.SnippetModel.Get(id)
 	if err == models.ErrNoRecord {
 		app.notFound(w)
 		return
@@ -65,10 +76,25 @@ func (app *Application) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "%v", result)
+	files := []string{
+		"./ui/html/show.page.tmpl",
+		"./ui/html/base.layout.tmpl",
+		"./ui/html/footer.partial.tmpl",
+	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	err = ts.Execute(w, s)
+	if err != nil {
+		app.serverError(w, err)
+	}
 }
 
-func (app *Application) CreateSnippet(w http.ResponseWriter, r *http.Request) {
+func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	app.InfoLog.Println("----- Inside CreateSnippet() ---- ")
 	if r.Method != "POST" {
 		w.Header().Set("Allow", "POST")
@@ -76,22 +102,22 @@ func (app *Application) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if app.Snippet == nil {
+	if app.SnippetContents == nil {
 		app.ErrorLog.Println("Sql Record is not defined")
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
-	if app.DB == nil {
+	if app.SnippetModel == nil {
 		app.ErrorLog.Println("Snippets is not defined")
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
-	id, err := app.DB.Insert(
-		app.Snippet.Title,
-		app.Snippet.Content,
-		app.Snippet.Expires)
+	id, err := app.SnippetModel.Insert(
+		app.SnippetContents.Title,
+		app.SnippetContents.Content,
+		app.SnippetContents.Expires)
 	if err != nil {
 		app.serverError(w, err)
 		return

@@ -5,17 +5,11 @@ import (
 	"net/http"
 )
 
-var templateFiles = []string{
-	"./ui/html/home.page.tmpl",
-	"./ui/html/base.layout.tmpl",
-	"./ui/html/footer.partial.tmpl",
-}
-
 var StaticFolder = "./ui/static"
 
 func CreateServer(app *Application, tmplFiles ...string) (*http.Server, error) {
 	if len(tmplFiles) > 0 {
-		templateFiles = tmplFiles
+		homePageTemplateFiles = tmplFiles
 	}
 	fileServer := createFileServer()
 	routes, err := createRoutes(fileServer, app)
@@ -36,9 +30,9 @@ func CreateServer(app *Application, tmplFiles ...string) (*http.Server, error) {
 func createRoutes(fileServer http.Handler, app *Application) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
 	if mux != nil {
-		mux.HandleFunc("/", app.Home)
-		mux.HandleFunc("/snippet", app.ShowSnippet)
-		mux.HandleFunc("/snippet/create", app.CreateSnippet)
+		mux.HandleFunc("/", app.home)
+		mux.HandleFunc("/snippet", app.showSnippet)
+		mux.HandleFunc("/snippet/create", app.createSnippet)
 		mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 	} else {
 		return nil, fmt.Errorf("cannot create Handler")
