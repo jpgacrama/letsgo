@@ -33,6 +33,14 @@ func NewMock() (*sql.DB, sqlmock.Sqlmock) {
 func TestInsert(t *testing.T) {
 	db, mock := NewMock()
 	infoLog, errorLog := server.CreateLoggers()
+
+	// New mocks due to newSnippetModel() factory
+	mock.ExpectBegin()
+	_ = mock.ExpectPrepare("SELECT ...") // SELECT for Latest Statement
+	query := "INSERT INTO snippets \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
+	prep := mock.ExpectPrepare(query)
+	_ = mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
+
 	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
 		if err == nil {
@@ -48,10 +56,6 @@ func TestInsert(t *testing.T) {
 		return
 	}
 	t.Run("Insert OK Case", func(t *testing.T) {
-		query := "INSERT INTO snippets \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
-
-		mock.ExpectBegin()
-		prep := mock.ExpectPrepare(query)
 		prep.ExpectExec().WithArgs(
 			sampleDatabaseContent.Title,
 			sampleDatabaseContent.Content,
