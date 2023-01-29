@@ -26,7 +26,7 @@ func TestHomePage(t *testing.T) {
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	db, mock := NewMock()
-	repo := &mysql.SnippetDatabase{
+	repo := &mysql.Database{
 		DB:       db,
 		InfoLog:  infoLog,
 		ErrorLog: errorLog}
@@ -108,7 +108,7 @@ func TestShowSnippet(t *testing.T) {
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	db, mock := NewMock()
-	repo := &mysql.SnippetDatabase{
+	repo := &mysql.Database{
 		DB:       db,
 		InfoLog:  infoLog,
 		ErrorLog: errorLog}

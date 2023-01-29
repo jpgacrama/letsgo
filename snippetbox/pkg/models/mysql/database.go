@@ -7,18 +7,18 @@ import (
 	"snippetbox/pkg/models"
 )
 
-type SnippetDatabase struct {
+type Database struct {
 	ctx      context.Context
 	DB       *sql.DB
 	InfoLog  *log.Logger
 	ErrorLog *log.Logger
 }
 
-func (m *SnippetDatabase) Close() {
+func (m *Database) Close() {
 	m.DB.Close()
 }
 
-func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
+func (m *Database) Latest() ([]*models.Snippet, error) {
 	m.InfoLog.Println("--- Inside Latest() ---")
 	transaction, err := m.initializeContext()
 	if err != nil {
@@ -65,7 +65,7 @@ func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 	return snippets, nil
 }
 
-func (m *SnippetDatabase) Insert(title, content, expires string) (int, error) {
+func (m *Database) Insert(title, content, expires string) (int, error) {
 	m.InfoLog.Println("--- Inside Insert() ---")
 	transaction, err := m.initializeContext()
 	errorValue := -1
@@ -97,7 +97,7 @@ func (m *SnippetDatabase) Insert(title, content, expires string) (int, error) {
 	return int(id), nil
 }
 
-func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
+func (m *Database) Get(id int) (*models.Snippet, error) {
 	m.InfoLog.Println("--- Inside Get() ---")
 	transaction, err := m.initializeContext()
 	if err != nil {
@@ -130,7 +130,7 @@ func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
 	}
 }
 
-func (m *SnippetDatabase) initializeContext() (*sql.Tx, error) {
+func (m *Database) initializeContext() (*sql.Tx, error) {
 	if m.ctx == nil {
 		m.ctx = context.Background()
 	}

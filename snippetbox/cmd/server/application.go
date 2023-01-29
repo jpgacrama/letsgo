@@ -15,7 +15,7 @@ type Application struct {
 	Addr     *string
 	InfoLog  *log.Logger
 	ErrorLog *log.Logger
-	DB       *mysql.SnippetDatabase
+	DB       *mysql.Database
 	Snippet  *models.Snippet
 }
 

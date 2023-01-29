@@ -33,7 +33,7 @@ func NewMock() (*sql.DB, sqlmock.Sqlmock) {
 func TestInsert(t *testing.T) {
 	db, mock := NewMock()
 	infoLog, errorLog := server.CreateLoggers()
-	repo := &mysql.SnippetDatabase{
+	repo := &mysql.Database{
 		DB:       db,
 		InfoLog:  infoLog,
 		ErrorLog: errorLog}
@@ -71,7 +71,7 @@ func TestInsert(t *testing.T) {
 func TestGet(t *testing.T) {
 	db, mock := NewMock()
 	infoLog, errorLog := server.CreateLoggers()
-	repo := &mysql.SnippetDatabase{
+	repo := &mysql.Database{
 		DB:       db,
 		InfoLog:  infoLog,
 		ErrorLog: errorLog}
@@ -109,7 +109,7 @@ func TestGet(t *testing.T) {
 func TestLatest(t *testing.T) {
 	db, mock := NewMock()
 	infoLog, errorLog := server.CreateLoggers()
-	repo := &mysql.SnippetDatabase{
+	repo := &mysql.Database{
 		DB:       db,
 		InfoLog:  infoLog,
 		ErrorLog: errorLog}

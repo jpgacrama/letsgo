@@ -49,7 +49,7 @@ func main() {
 			Addr:     addr,
 			InfoLog:  infoLog,
 			ErrorLog: errorLog,
-			DB: &mysql.SnippetDatabase{
+			DB: &mysql.Database{
 				DB:       db,
 				InfoLog:  infoLog,
 				ErrorLog: errorLog},
