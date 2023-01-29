@@ -130,6 +130,16 @@ func TestGet(t *testing.T) {
 func TestLatest(t *testing.T) {
 	db, mock := NewMock()
 	infoLog, errorLog := server.CreateLoggers()
+
+	// New mocks due to NewSnippetModel() factory
+	mock.ExpectBegin()
+
+	// SELECT for Latest Statement
+	query := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) ORDER BY created DESC LIMIT 10"
+	prep := mock.ExpectPrepare(query)
+	_ = mock.ExpectPrepare("INSERT ...")
+	_ = mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
+
 	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
 		if err == nil {
@@ -145,9 +155,6 @@ func TestLatest(t *testing.T) {
 		return
 	}
 	t.Run("Latest() OK Case", func(t *testing.T) {
-		query := "SELECT ..."
-		mock.ExpectBegin()
-		prep := mock.ExpectPrepare(query)
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "1")
 		prep.ExpectQuery().WillReturnRows(rows)
