@@ -32,15 +32,16 @@ var showSnippetTemplateFiles = []string{
 }
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
-	app.InfoLog.Println("----- Inside Home() ---- ")
+	app.InfoLog.Println("----- Inside home() ---- ")
 	if r.URL.Path != "/" {
+		app.ErrorLog.Printf("\n\t----- home() error: \"home page should be \\/ \" -----")
 		app.notFound(w)
 		return
 	}
 
 	s, err := app.SnippetModel.Latest()
 	if err != nil {
-		app.ErrorLog.Printf("\n\t-----Home(): Error Found: %s -----", err)
+		app.ErrorLog.Printf("\n\t----- home(): Error Found: %s -----", err)
 		app.serverError(w, err)
 		return
 	}
@@ -51,11 +52,13 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 
 	ts, err := template.ParseFiles(homePageTemplateFiles...)
 	if err != nil {
+		app.ErrorLog.Printf("\n\t----- home(): Error Found: %s -----", err)
 		app.serverError(w, err)
 		return
 	}
 	err = ts.Execute(w, nil)
 	if err != nil {
+		app.ErrorLog.Printf("\n\t----- home(): Error Found: %s -----", err)
 		app.serverError(w, err)
 	}
 }
@@ -63,33 +66,32 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
+		app.ErrorLog.Printf("\n\t---- showSnippet() error: %s ----", err)
 		app.notFound(w)
 		return
 	}
 
 	s, err := app.SnippetModel.Get(id)
 	if err == models.ErrNoRecord {
+		app.ErrorLog.Printf("\n\t---- showSnippet() error: %s ----", err)
 		app.notFound(w)
 		return
 	} else if err != nil {
+		app.ErrorLog.Printf("\n\t---- showSnippet() error: %s ----", err)
 		app.serverError(w, err)
 		return
 	}
 
-	files := []string{
-		"./ui/html/show.page.tmpl",
-		"./ui/html/base.layout.tmpl",
-		"./ui/html/footer.partial.tmpl",
-	}
-
-	ts, err := template.ParseFiles(files...)
+	ts, err := template.ParseFiles(showSnippetTemplateFiles...)
 	if err != nil {
+		app.ErrorLog.Printf("\n\t---- showSnippet() error: %s ----", err)
 		app.serverError(w, err)
 		return
 	}
 
 	err = ts.Execute(w, s)
 	if err != nil {
+		app.ErrorLog.Printf("showSnippet() error: %s", err)
 		app.serverError(w, err)
 	}
 }

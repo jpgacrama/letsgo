@@ -61,7 +61,7 @@ func main() {
 				Content: "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa",
 				Expires: "7",
 			},
-		})
+		}, nil, nil)
 	if err == nil {
 		infoLog.Printf("Starting server on %s", *addr)
 		errorLog.Fatal(server.ListenAndServe())

@@ -13,8 +13,14 @@ import (
 	"time"
 )
 
-var templateFiles = []string{
+var homePagetemplateFiles = []string{
 	"../ui/html/home.page.tmpl",
+	"../ui/html/base.layout.tmpl",
+	"../ui/html/footer.partial.tmpl",
+}
+
+var showSnippetTemplateFiles = []string{
+	"../ui/html/show.page.tmpl",
 	"../ui/html/base.layout.tmpl",
 	"../ui/html/footer.partial.tmpl",
 }
@@ -52,7 +58,7 @@ func TestHomePage(t *testing.T) {
 		SnippetModel: repo,
 	}
 	t.Run("checking home page OK Case", func(t *testing.T) {
-		server, err := server.CreateServer(app, templateFiles...)
+		server, err := server.CreateServer(app, homePagetemplateFiles, nil)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
@@ -69,7 +75,7 @@ func TestHomePage(t *testing.T) {
 		assertStatus(t, response, http.StatusOK)
 	})
 	t.Run("checking home page NOK Case", func(t *testing.T) {
-		server, err := server.CreateServer(app, templateFiles...)
+		server, err := server.CreateServer(app, homePagetemplateFiles, nil)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
@@ -91,7 +97,7 @@ func TestStaticPage(t *testing.T) {
 		ErrorLog: errorLog,
 	}
 	t.Run("checking static page OK Case", func(t *testing.T) {
-		server, err := server.CreateServer(app, templateFiles...)
+		server, err := server.CreateServer(app, homePagetemplateFiles, nil)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
@@ -101,7 +107,7 @@ func TestStaticPage(t *testing.T) {
 		assertStatus(t, response, http.StatusOK)
 	})
 	t.Run("checking static page NOK Case", func(t *testing.T) {
-		server, err := server.CreateServer(app, templateFiles...)
+		server, err := server.CreateServer(app, homePagetemplateFiles, nil)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
@@ -142,7 +148,7 @@ func TestShowSnippet(t *testing.T) {
 		SnippetModel: repo,
 	}
 	t.Run("checking show snippet OK Case", func(t *testing.T) {
-		server, err := server.CreateServer(app, templateFiles...)
+		server, err := server.CreateServer(app, nil, showSnippetTemplateFiles)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
@@ -159,7 +165,7 @@ func TestShowSnippet(t *testing.T) {
 		assertStatus(t, response, http.StatusOK)
 	})
 	t.Run("checking show snippet NOK Case", func(t *testing.T) {
-		server, err := server.CreateServer(app, templateFiles...)
+		server, err := server.CreateServer(app, nil, showSnippetTemplateFiles)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
