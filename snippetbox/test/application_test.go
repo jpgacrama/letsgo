@@ -26,13 +26,29 @@ func TestHomePage(t *testing.T) {
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	db, mock := NewMock()
-	repo := &mysql.Database{
-		DB:       db,
-		InfoLog:  infoLog,
-		ErrorLog: errorLog}
+
+	// New mocks due to newSnippetModel() factory
+	mock.ExpectBegin()
+
+	_ = mock.ExpectPrepare("SELECT ...") // SELECT for Latest Statement
+	_ = mock.ExpectPrepare("INSERT ...")
+	prep := mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
+
+	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
-		repo.Close()
+		if err == nil {
+			repo.GetStatement.Close()
+			repo.InsertStatement.Close()
+			repo.LatestStatement.Close()
+			repo.Close()
+		}
 	}()
+
+	if err != nil {
+		log.Fatalf("Creating NewSnippetModel failed")
+		return
+	}
+
 	app := &server.Application{
 		Addr:     &addr,
 		InfoLog:  infoLog,
@@ -47,9 +63,6 @@ func TestHomePage(t *testing.T) {
 
 		// Adding ExpectPrepare to DB Expectations
 		sampleDatabaseContent.ID = 1
-		query := "SELECT ..."
-		mock.ExpectBegin()
-		prep := mock.ExpectPrepare(query)
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "1")
 		prep.ExpectQuery().WillReturnRows(rows)
@@ -108,13 +121,20 @@ func TestShowSnippet(t *testing.T) {
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	db, mock := NewMock()
-	repo := &mysql.Database{
-		DB:       db,
-		InfoLog:  infoLog,
-		ErrorLog: errorLog}
+	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
-		repo.Close()
+		if err == nil {
+			repo.GetStatement.Close()
+			repo.InsertStatement.Close()
+			repo.LatestStatement.Close()
+			repo.Close()
+		}
 	}()
+
+	if err != nil {
+		log.Fatalf("Creating NewSnippetModel failed")
+		return
+	}
 	app := &server.Application{
 		Addr:     &addr,
 		InfoLog:  infoLog,

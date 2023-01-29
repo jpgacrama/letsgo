@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var sampleDatabaseContent = &models.Snippet{
+var sampleDatabaseContent = &models.SnippetContents{
 	ID:      0,
 	Title:   "Title",
 	Content: "Content",
@@ -33,13 +33,20 @@ func NewMock() (*sql.DB, sqlmock.Sqlmock) {
 func TestInsert(t *testing.T) {
 	db, mock := NewMock()
 	infoLog, errorLog := server.CreateLoggers()
-	repo := &mysql.Database{
-		DB:       db,
-		InfoLog:  infoLog,
-		ErrorLog: errorLog}
+	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
-		repo.Close()
+		if err == nil {
+			repo.GetStatement.Close()
+			repo.InsertStatement.Close()
+			repo.LatestStatement.Close()
+			repo.Close()
+		}
 	}()
+
+	if err != nil {
+		log.Fatalf("Creating NewSnippetModel failed")
+		return
+	}
 	t.Run("Insert OK Case", func(t *testing.T) {
 		query := "INSERT INTO snippets \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
 
@@ -71,13 +78,20 @@ func TestInsert(t *testing.T) {
 func TestGet(t *testing.T) {
 	db, mock := NewMock()
 	infoLog, errorLog := server.CreateLoggers()
-	repo := &mysql.Database{
-		DB:       db,
-		InfoLog:  infoLog,
-		ErrorLog: errorLog}
+	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
-		repo.Close()
+		if err == nil {
+			repo.GetStatement.Close()
+			repo.InsertStatement.Close()
+			repo.LatestStatement.Close()
+			repo.Close()
+		}
 	}()
+
+	if err != nil {
+		log.Fatalf("Creating NewSnippetModel failed")
+		return
+	}
 
 	t.Run("Get() OK Case", func(t *testing.T) {
 		query := "SELECT ..."
@@ -109,13 +123,20 @@ func TestGet(t *testing.T) {
 func TestLatest(t *testing.T) {
 	db, mock := NewMock()
 	infoLog, errorLog := server.CreateLoggers()
-	repo := &mysql.Database{
-		DB:       db,
-		InfoLog:  infoLog,
-		ErrorLog: errorLog}
+	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
-		repo.Close()
+		if err == nil {
+			repo.GetStatement.Close()
+			repo.InsertStatement.Close()
+			repo.LatestStatement.Close()
+			repo.Close()
+		}
 	}()
+
+	if err != nil {
+		log.Fatalf("Creating NewSnippetModel failed")
+		return
+	}
 	t.Run("Latest() OK Case", func(t *testing.T) {
 		query := "SELECT ..."
 		mock.ExpectBegin()

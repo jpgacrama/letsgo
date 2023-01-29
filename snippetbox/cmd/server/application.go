@@ -15,8 +15,8 @@ type Application struct {
 	Addr     *string
 	InfoLog  *log.Logger
 	ErrorLog *log.Logger
-	DB       *mysql.Database
-	Snippet  *models.Snippet
+	DB       *mysql.SnippetModel
+	Snippet  *models.SnippetContents
 }
 
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {

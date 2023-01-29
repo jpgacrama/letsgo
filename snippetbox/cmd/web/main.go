@@ -44,16 +44,19 @@ func main() {
 	}
 	defer db.Close()
 
+	snippetModel, err := mysql.NewSnippetModel(db, infoLog, errorLog)
+	if err != nil {
+		errorLog.Fatal("Failed to create NewSnippetModel()")
+		return
+	}
+
 	server, err := server.CreateServer(
 		&server.Application{
 			Addr:     addr,
 			InfoLog:  infoLog,
 			ErrorLog: errorLog,
-			DB: &mysql.Database{
-				DB:       db,
-				InfoLog:  infoLog,
-				ErrorLog: errorLog},
-			Snippet: &models.Snippet{
+			DB:       snippetModel,
+			Snippet: &models.SnippetContents{
 				Title:   "O snail",
 				Content: "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa",
 				Expires: "7",
