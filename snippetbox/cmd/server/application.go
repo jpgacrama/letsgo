@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"html/template"
+	// "html/template"
 	"log"
 	"net/http"
 	"runtime/debug"
@@ -15,8 +15,8 @@ type Application struct {
 	Addr     *string
 	InfoLog  *log.Logger
 	ErrorLog *log.Logger
-	DB       *mysql.SnippetDatabase
-	Snippet  *models.Snippet
+	DB       *mysql.SnippetModel
+	Snippet  *models.SnippetContents
 }
 
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
@@ -26,15 +26,26 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ts, err := template.ParseFiles(templateFiles...)
+	s, err := app.DB.Latest()
 	if err != nil {
+		app.ErrorLog.Printf("\n\t-----Home(): Error Found: %s -----", err)
 		app.serverError(w, err)
 		return
 	}
-	err = ts.Execute(w, nil)
-	if err != nil {
-		app.serverError(w, err)
+
+	for _, snippet := range s {
+		fmt.Fprintf(w, "%v\n", snippet)
 	}
+
+	// ts, err := template.ParseFiles(templateFiles...)
+	// if err != nil {
+	// 	app.serverError(w, err)
+	// 	return
+	// }
+	// err = ts.Execute(w, nil)
+	// if err != nil {
+	// 	app.serverError(w, err)
+	// }
 }
 
 func (app *Application) ShowSnippet(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +55,17 @@ func (app *Application) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w)
 		return
 	}
-	fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
+
+	result, err := app.DB.Get(id)
+	if err == models.ErrNoRecord {
+		app.notFound(w)
+		return
+	} else if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	fmt.Fprintf(w, "%v", result)
 }
 
 func (app *Application) CreateSnippet(w http.ResponseWriter, r *http.Request) {
