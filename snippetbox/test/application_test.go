@@ -36,9 +36,6 @@ func TestHomePage(t *testing.T) {
 	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
 		if err == nil {
-			repo.GetStatement.Close()
-			repo.InsertStatement.Close()
-			repo.LatestStatement.Close()
 			repo.Close()
 		}
 	}()
@@ -130,9 +127,6 @@ func TestShowSnippet(t *testing.T) {
 	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
 		if err == nil {
-			repo.GetStatement.Close()
-			repo.InsertStatement.Close()
-			repo.LatestStatement.Close()
 			repo.Close()
 		}
 	}()

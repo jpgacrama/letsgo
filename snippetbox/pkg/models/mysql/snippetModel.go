@@ -60,6 +60,9 @@ func NewSnippetModel(db *sql.DB, infolog, errorlog *log.Logger) (*SnippetModel, 
 
 func (m *SnippetModel) Close() {
 	m.db.Close()
+	m.LatestStatement.Close()
+	m.InsertStatement.Close()
+	m.GetStatement.Close()
 }
 
 // NOTE: rows.Close() must be called by the calling function!

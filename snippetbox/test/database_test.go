@@ -44,9 +44,6 @@ func TestInsert(t *testing.T) {
 	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
 		if err == nil {
-			repo.GetStatement.Close()
-			repo.InsertStatement.Close()
-			repo.LatestStatement.Close()
 			repo.Close()
 		}
 	}()
@@ -94,9 +91,6 @@ func TestGet(t *testing.T) {
 	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
 		if err == nil {
-			repo.GetStatement.Close()
-			repo.InsertStatement.Close()
-			repo.LatestStatement.Close()
 			repo.Close()
 		}
 	}()
@@ -143,9 +137,6 @@ func TestLatest(t *testing.T) {
 	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
 		if err == nil {
-			repo.GetStatement.Close()
-			repo.InsertStatement.Close()
-			repo.LatestStatement.Close()
 			repo.Close()
 		}
 	}()
