@@ -163,4 +163,10 @@ func TestLatest(t *testing.T) {
 		assert.NotNil(t, output)
 		assert.NoError(t, err)
 	})
+	t.Run("Latest() NOK Case", func(t *testing.T) {
+		output, err := repo.Latest()
+		prep.ExpectQuery().WillReturnError(err)
+		assert.Nil(t, output)
+		assert.Error(t, err)
+	})
 }
