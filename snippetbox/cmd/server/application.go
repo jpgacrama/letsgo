@@ -58,8 +58,8 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	err = ts.Execute(w, data)
-	if err != nil {
+
+	if err = ts.Execute(w, data); err != nil {
 		app.ErrorLog.Printf("\n\t----- home(): Error Found: %s -----", err)
 		app.serverError(w, err)
 	}
@@ -95,8 +95,7 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = ts.Execute(w, data)
-	if err != nil {
+	if err = ts.Execute(w, data); err != nil {
 		app.ErrorLog.Printf("showSnippet() error: %s", err)
 		app.serverError(w, err)
 	}
