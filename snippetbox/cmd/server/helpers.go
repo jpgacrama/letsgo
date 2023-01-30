@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net/http"
@@ -23,10 +24,13 @@ func (app *Application) render(w http.ResponseWriter, r *http.Request, name stri
 		return
 	}
 
-	// Execute the template set, passing in any dynamic data.
-	err := ts.Execute(w, td)
+	buf := new(bytes.Buffer)
+	err := ts.Execute(buf, td)
 	if err != nil {
-		app.ErrorLog.Printf("\n\t--- render() error; %s ---", err)
+		app.ErrorLog.Printf("\n\t--- render() error: %s ---", err)
 		app.serverError(w, err)
+		return
 	}
+
+	buf.WriteTo(w)
 }
