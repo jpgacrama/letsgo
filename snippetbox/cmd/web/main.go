@@ -3,18 +3,12 @@ package main
 import (
 	"database/sql"
 	"flag"
-	"log"
 	"snippetbox/cmd/server"
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
 
 	_ "github.com/go-sql-driver/mysql"
 )
-
-type application struct {
-	errorLog *log.Logger
-	infoLog  *log.Logger
-}
 
 func parseUserInputs() (*string, *string) {
 	addr := flag.String("addr", ":4000", "HTTP network address")
