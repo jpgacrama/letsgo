@@ -62,7 +62,7 @@ func main() {
 				Expires: "7",
 			},
 			TemplateCache: templateCache,
-		}, nil, nil)
+		})
 	if err == nil {
 		infoLog.Printf("Starting server on %s", *port)
 		errorLog.Fatal(server.ListenAndServe())

@@ -10,17 +10,7 @@ var StaticFolder = "./ui/static"
 // NOTE:
 // Set homeTemplate and showSnippetTemplate to nil
 // if you want to use the default values
-func CreateServer(app *Application,
-	homeTemplate, showSnippetTemplate []string) (*http.Server, error) {
-
-	// Initializing the Template Files
-	if homeTemplate != nil {
-		homePageTemplateFiles = homeTemplate
-	}
-	if showSnippetTemplate != nil {
-		showSnippetTemplateFiles = showSnippetTemplate
-	}
-
+func CreateServer(app *Application) (*http.Server, error) {
 	fileServer := createFileServer()
 	routes, err := createRoutes(fileServer, app)
 	if err != nil {

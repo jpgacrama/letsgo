@@ -74,20 +74,10 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create an instance of a templateData struct holding the snippet data.
-	data := &templateData{Snippet: snippetContents}
-
-	ts, err := template.ParseFiles(showSnippetTemplateFiles...)
-	if err != nil {
-		app.ErrorLog.Printf("\n\t---- showSnippet() error: %s ----", err)
-		app.serverError(w, err)
-		return
-	}
-
-	if err = ts.Execute(w, data); err != nil {
-		app.ErrorLog.Printf("showSnippet() error: %s", err)
-		app.serverError(w, err)
-	}
+	// Use the new render helper.
+	app.render(w, r, "show.page.tmpl", &templateData{
+		Snippet: snippetContents,
+	})
 }
 
 func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
