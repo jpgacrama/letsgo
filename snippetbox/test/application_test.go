@@ -52,10 +52,10 @@ func TestHomePage(t *testing.T) {
 	}
 
 	app := &server.Application{
-		Addr:         &addr,
-		InfoLog:      infoLog,
-		ErrorLog:     errorLog,
-		SnippetModel: repo,
+		Addr:      &addr,
+		InfoLog:   infoLog,
+		ErrorLog:  errorLog,
+		SnippetDB: repo,
 	}
 	t.Run("checking home page OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app, homePagetemplateFiles, nil)
@@ -142,10 +142,10 @@ func TestShowSnippet(t *testing.T) {
 		return
 	}
 	app := &server.Application{
-		Addr:         &addr,
-		InfoLog:      infoLog,
-		ErrorLog:     errorLog,
-		SnippetModel: repo,
+		Addr:      &addr,
+		InfoLog:   infoLog,
+		ErrorLog:  errorLog,
+		SnippetDB: repo,
 	}
 	t.Run("checking show snippet OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app, nil, showSnippetTemplateFiles)

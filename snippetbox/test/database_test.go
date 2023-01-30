@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var sampleDatabaseContent = &models.SnippetContents{
+var sampleDatabaseContent = &models.Snippet{
 	ID:      0,
 	Title:   "Title",
 	Content: "Content",

@@ -12,11 +12,11 @@ import (
 )
 
 type Application struct {
-	Addr            *string
-	InfoLog         *log.Logger
-	ErrorLog        *log.Logger
-	SnippetModel    *mysql.SnippetModel
-	SnippetContents *models.SnippetContents
+	Addr      *string
+	InfoLog   *log.Logger
+	ErrorLog  *log.Logger
+	SnippetDB *mysql.SnippetDatabase
+	Snippet   *models.Snippet
 }
 
 var homePageTemplateFiles = []string{
@@ -39,12 +39,16 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := app.SnippetModel.Latest()
+	s, err := app.SnippetDB.Latest()
 	if err != nil {
 		app.ErrorLog.Printf("\n\t----- home(): Error Found: %s -----", err)
 		app.serverError(w, err)
 		return
 	}
+
+	// Create an instance of a templateData struct holding the slice of
+	// snippets.
+	data := &templateData{Snippets: s}
 
 	for _, snippet := range s {
 		fmt.Fprintf(w, "%v\n", snippet)
@@ -56,7 +60,7 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	err = ts.Execute(w, nil)
+	err = ts.Execute(w, data)
 	if err != nil {
 		app.ErrorLog.Printf("\n\t----- home(): Error Found: %s -----", err)
 		app.serverError(w, err)
@@ -71,7 +75,7 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snippetContents, err := app.SnippetModel.Get(id)
+	snippetContents, err := app.SnippetDB.Get(id)
 	switch {
 	case err == models.ErrNoRecord:
 		app.ErrorLog.Printf("\n\t---- showSnippet() error: %s ----", err)
@@ -108,22 +112,22 @@ func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if app.SnippetContents == nil {
+	if app.Snippet == nil {
 		app.ErrorLog.Println("Sql Record is not defined")
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
-	if app.SnippetModel == nil {
+	if app.SnippetDB == nil {
 		app.ErrorLog.Println("Snippets is not defined")
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
-	id, err := app.SnippetModel.Insert(
-		app.SnippetContents.Title,
-		app.SnippetContents.Content,
-		app.SnippetContents.Expires)
+	id, err := app.SnippetDB.Insert(
+		app.Snippet.Title,
+		app.Snippet.Content,
+		app.Snippet.Expires)
 	if err != nil {
 		app.serverError(w, err)
 		return

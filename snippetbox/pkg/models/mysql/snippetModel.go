@@ -7,7 +7,7 @@ import (
 	"snippetbox/pkg/models"
 )
 
-type SnippetModel struct {
+type SnippetDatabase struct {
 	ctx             context.Context
 	tx              *sql.Tx
 	db              *sql.DB
@@ -19,8 +19,8 @@ type SnippetModel struct {
 }
 
 // NOTE: It is now the caller's responsibility to close EACH of the Statements!
-func NewSnippetModel(db *sql.DB, infolog, errorlog *log.Logger) (*SnippetModel, error) {
-	snippetModel := &SnippetModel{db: db, infoLog: infolog, errorLog: errorlog}
+func NewSnippetModel(db *sql.DB, infolog, errorlog *log.Logger) (*SnippetDatabase, error) {
+	snippetModel := &SnippetDatabase{db: db, infoLog: infolog, errorLog: errorlog}
 	err := snippetModel.initializeContext()
 	if err != nil {
 		snippetModel.errorLog.Printf("\n\t--- InitDatabase(): Error Initializing Context: %s ---", err)
@@ -58,7 +58,7 @@ func NewSnippetModel(db *sql.DB, infolog, errorlog *log.Logger) (*SnippetModel, 
 	return snippetModel, nil
 }
 
-func (m *SnippetModel) Close() {
+func (m *SnippetDatabase) Close() {
 	m.db.Close()
 	m.LatestStatement.Close()
 	m.InsertStatement.Close()
@@ -66,7 +66,7 @@ func (m *SnippetModel) Close() {
 }
 
 // NOTE: rows.Close() must be called by the calling function!
-func (m *SnippetModel) Latest() ([]*models.SnippetContents, error) {
+func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 	m.infoLog.Println("--- Inside Latest() ---")
 	if m.LatestStatement == nil {
 		// Assumes that even the loggers for SnippetModel were not set yet
@@ -80,9 +80,9 @@ func (m *SnippetModel) Latest() ([]*models.SnippetContents, error) {
 		return nil, err
 	}
 
-	snippets := []*models.SnippetContents{}
+	snippets := []*models.Snippet{}
 	for rows.Next() {
-		s := &models.SnippetContents{}
+		s := &models.Snippet{}
 		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
 		if err != nil {
 			m.errorLog.Printf("\n\t--- Latest(): Error Scanning: %s ---", err)
@@ -102,7 +102,7 @@ func (m *SnippetModel) Latest() ([]*models.SnippetContents, error) {
 	return snippets, nil
 }
 
-func (m *SnippetModel) Insert(title, content, expires string) (int, error) {
+func (m *SnippetDatabase) Insert(title, content, expires string) (int, error) {
 	m.infoLog.Println("--- Inside Insert() ---")
 	if m.LatestStatement == nil {
 		// Assumes that even the loggers for SnippetModel were not set yet
@@ -124,14 +124,14 @@ func (m *SnippetModel) Insert(title, content, expires string) (int, error) {
 	return int(id), nil
 }
 
-func (m *SnippetModel) Get(id int) (*models.SnippetContents, error) {
+func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
 	m.infoLog.Println("--- Inside Get() ---")
 	if m.LatestStatement == nil {
 		// Assumes that even the loggers for SnippetModel were not set yet
 		log.Fatalf("\n\t---- Call NewSnippetModel() first----")
 	}
 
-	s := &models.SnippetContents{}
+	s := &models.Snippet{}
 	err := m.GetStatement.QueryRowContext(m.ctx, id).Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
 	switch {
 	case err == sql.ErrNoRows:
@@ -148,7 +148,7 @@ func (m *SnippetModel) Get(id int) (*models.SnippetContents, error) {
 	}
 }
 
-func (m *SnippetModel) initializeContext() error {
+func (m *SnippetDatabase) initializeContext() error {
 	if m.ctx == nil {
 		m.ctx = context.Background()
 	}
