@@ -50,12 +50,18 @@ func TestHomePage(t *testing.T) {
 		log.Fatalf("Creating NewSnippetModel failed")
 		return
 	}
+	// Initialize a new template cache...
+	templateCache, err := server.NewTemplateCache("../ui/html/")
+	if err != nil {
+		errorLog.Fatal(err)
+	}
 
 	app := &server.Application{
-		Port:      &port,
-		InfoLog:   infoLog,
-		ErrorLog:  errorLog,
-		SnippetDB: repo,
+		Port:          &port,
+		InfoLog:       infoLog,
+		ErrorLog:      errorLog,
+		SnippetDB:     repo,
+		TemplateCache: templateCache,
 	}
 	t.Run("checking home page OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app, homePagetemplateFiles, nil)

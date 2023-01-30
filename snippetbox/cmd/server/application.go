@@ -12,11 +12,12 @@ import (
 )
 
 type Application struct {
-	Port      *string
-	InfoLog   *log.Logger
-	ErrorLog  *log.Logger
-	SnippetDB *mysql.SnippetDatabase
-	Snippet   *models.Snippet
+	Port          *string
+	InfoLog       *log.Logger
+	ErrorLog      *log.Logger
+	SnippetDB     *mysql.SnippetDatabase
+	Snippet       *models.Snippet
+	TemplateCache map[string]*template.Template
 }
 
 var homePageTemplateFiles = []string{
@@ -46,23 +47,11 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create an instance of a templateData struct holding the slice of
-	// snippets.
-	data := &templateData{
+	// Use the new render helper.
+	app.render(w, r, "home.page.tmpl", &templateData{
 		Snippet:  nil,
-		Snippets: s}
-
-	ts, err := template.ParseFiles(homePageTemplateFiles...)
-	if err != nil {
-		app.ErrorLog.Printf("\n\t----- home(): Error Found: %s -----", err)
-		app.serverError(w, err)
-		return
-	}
-
-	if err = ts.Execute(w, data); err != nil {
-		app.ErrorLog.Printf("\n\t----- home(): Error Found: %s -----", err)
-		app.serverError(w, err)
-	}
+		Snippets: s,
+	})
 }
 
 func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {

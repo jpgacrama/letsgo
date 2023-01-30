@@ -38,6 +38,12 @@ func main() {
 	}
 	defer db.Close()
 
+	// Initialize a new template cache...
+	templateCache, err := server.NewTemplateCache("./ui/html/")
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
 	snippetModel, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	if err != nil {
 		errorLog.Fatal("Failed to create NewSnippetModel()")
@@ -55,6 +61,7 @@ func main() {
 				Content: "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa",
 				Expires: "7",
 			},
+			TemplateCache: templateCache,
 		}, nil, nil)
 	if err == nil {
 		infoLog.Printf("Starting server on %s", *port)
