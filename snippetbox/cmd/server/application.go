@@ -34,7 +34,7 @@ var showSnippetTemplateFiles = []string{
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	app.InfoLog.Println("----- Inside home() ---- ")
 	if r.URL.Path != "/" {
-		app.ErrorLog.Printf("\n\t----- home() error: \"home page should be \\/ \" -----")
+		app.ErrorLog.Printf("\n\t----- home() error. Path is: %s -----", r.URL.Path)
 		app.notFound(w)
 		return
 	}
@@ -48,11 +48,9 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 
 	// Create an instance of a templateData struct holding the slice of
 	// snippets.
-	data := &templateData{Snippets: s}
-
-	for _, snippet := range s {
-		fmt.Fprintf(w, "%v\n", snippet)
-	}
+	data := &templateData{
+		Snippet:  nil,
+		Snippets: s}
 
 	ts, err := template.ParseFiles(homePageTemplateFiles...)
 	if err != nil {
