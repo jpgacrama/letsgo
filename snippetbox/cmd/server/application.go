@@ -12,7 +12,7 @@ import (
 )
 
 type Application struct {
-	Addr      *string
+	Port      *string
 	InfoLog   *log.Logger
 	ErrorLog  *log.Logger
 	SnippetDB *mysql.SnippetDatabase

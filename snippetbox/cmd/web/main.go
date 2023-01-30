@@ -11,10 +11,10 @@ import (
 )
 
 func parseUserInputs() (*string, *string) {
-	addr := flag.String("addr", ":4000", "HTTP network address")
+	port := flag.String("port", ":4000", "HTTP network address")
 	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
 	flag.Parse()
-	return addr, dsn
+	return port, dsn
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -30,7 +30,7 @@ func openDB(dsn string) (*sql.DB, error) {
 }
 
 func main() {
-	addr, dsn := parseUserInputs()
+	port, dsn := parseUserInputs()
 	infoLog, errorLog := server.CreateLoggers()
 	db, err := openDB(*dsn)
 	if err != nil {
@@ -46,7 +46,7 @@ func main() {
 
 	server, err := server.CreateServer(
 		&server.Application{
-			Addr:      addr,
+			Port:      port,
 			InfoLog:   infoLog,
 			ErrorLog:  errorLog,
 			SnippetDB: snippetModel,
@@ -57,7 +57,7 @@ func main() {
 			},
 		}, nil, nil)
 	if err == nil {
-		infoLog.Printf("Starting server on %s", *addr)
+		infoLog.Printf("Starting server on %s", *port)
 		errorLog.Fatal(server.ListenAndServe())
 	}
 }

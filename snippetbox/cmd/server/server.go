@@ -30,7 +30,7 @@ func CreateServer(app *Application,
 	}
 
 	srv := &http.Server{
-		Addr:     *app.Addr,
+		Addr:     *app.Port,
 		ErrorLog: app.ErrorLog,
 		Handler:  routes,
 	}

@@ -28,7 +28,7 @@ var showSnippetTemplateFiles = []string{
 var staticFolder = "../ui/static"
 
 func TestHomePage(t *testing.T) {
-	addr := ":4000"
+	port := ":4000"
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	db, mock := NewMock()
@@ -52,7 +52,7 @@ func TestHomePage(t *testing.T) {
 	}
 
 	app := &server.Application{
-		Addr:      &addr,
+		Port:      &port,
 		InfoLog:   infoLog,
 		ErrorLog:  errorLog,
 		SnippetDB: repo,
@@ -88,11 +88,11 @@ func TestHomePage(t *testing.T) {
 
 func TestStaticPage(t *testing.T) {
 	server.StaticFolder = staticFolder
-	addr := ":4000"
+	port := ":4000"
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	app := &server.Application{
-		Addr:     &addr,
+		Port:     &port,
 		InfoLog:  infoLog,
 		ErrorLog: errorLog,
 	}
@@ -119,7 +119,7 @@ func TestStaticPage(t *testing.T) {
 }
 
 func TestShowSnippet(t *testing.T) {
-	addr := ":4000"
+	port := ":4000"
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	db, mock := NewMock()
@@ -142,7 +142,7 @@ func TestShowSnippet(t *testing.T) {
 		return
 	}
 	app := &server.Application{
-		Addr:      &addr,
+		Port:      &port,
 		InfoLog:   infoLog,
 		ErrorLog:  errorLog,
 		SnippetDB: repo,
