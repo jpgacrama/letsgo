@@ -71,8 +71,7 @@ func (m *SnippetDatabase) Close() {
 func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 	m.infoLog.Println("--- Inside Latest() ---")
 	if m.LatestStatement == nil {
-		// Assumes that even the loggers for SnippetModel were not set yet
-		log.Fatalf("\n\t---- Call NewSnippetModel() first----")
+		m.errorLog.Fatalf("\n\t---- Call NewSnippetModel() first----")
 	}
 
 	rows, err := m.LatestStatement.QueryContext(m.ctx)
@@ -115,8 +114,7 @@ func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 func (m *SnippetDatabase) Insert(title, content string, expires time.Time) (int, error) {
 	m.infoLog.Println("--- Inside Insert() ---")
 	if m.LatestStatement == nil {
-		// Assumes that even the loggers for SnippetModel were not set yet
-		log.Fatalf("\n\t---- Call NewSnippetModel() first----")
+		m.errorLog.Fatalf("\n\t---- Call NewSnippetModel() first----")
 	}
 
 	errorValue := -1
@@ -142,22 +140,29 @@ func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
 	m.infoLog.Println("--- Inside Get() ---")
 	if m.LatestStatement == nil {
 		// Assumes that even the loggers for SnippetModel were not set yet
-		log.Fatalf("\n\t---- Call NewSnippetModel() first----")
+		m.errorLog.Fatalf("\n\t---- Call NewSnippetModel() first----")
 	}
 
 	s := &models.Snippet{}
-	err := m.GetStatement.QueryRowContext(m.ctx, id).Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+	expiresString := ""
+	err := m.GetStatement.QueryRowContext(m.ctx, id).Scan(&s.ID, &s.Title, &s.Content, &s.Created, &expiresString)
 	switch {
 	case err == sql.ErrNoRows:
-		m.errorLog.Println("\n\t--- Get(): No Record ---")
+		m.errorLog.Printf("\n\t--- Error: %s ---", err)
 		m.tx.Rollback()
 		return nil, models.ErrNoRecord
 	case err != nil:
-		m.errorLog.Print("\n\t--- Get(): Error Querying:", err, " ---")
+		m.errorLog.Printf("\n\t--- Error: %s ---", err)
 		m.tx.Rollback()
 		return nil, err
 	default:
-		log.Printf("ID is %v, created on %s\n", s.ID, s.Created)
+		daysToExpire, err := strconv.Atoi(expiresString)
+		if err != nil {
+			m.errorLog.Printf("\n\t--- Error: %s ---", err)
+			return nil, err
+		}
+		s.Expires = time.Now().AddDate(0, 0, daysToExpire)
+		m.infoLog.Printf("ID is %v, created on %s\n", s.ID, s.Created)
 		return s, nil
 	}
 }
