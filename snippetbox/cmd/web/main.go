@@ -6,6 +6,7 @@ import (
 	"snippetbox/cmd/server"
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -50,6 +51,8 @@ func main() {
 		return
 	}
 
+	created := time.Now()
+	expires := created.AddDate(0, 0, 1)
 	server, err := server.CreateServer(
 		&server.Application{
 			Port:      port,
@@ -59,7 +62,8 @@ func main() {
 			Snippet: &models.Snippet{
 				Title:   "O snail",
 				Content: "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa",
-				Expires: "7",
+				Created: created,
+				Expires: expires,
 			},
 			TemplateCache: templateCache,
 		})

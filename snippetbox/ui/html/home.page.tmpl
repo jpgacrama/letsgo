@@ -2,6 +2,7 @@
 {{template "base" .}}
 
 {{define "title"}}Home{{end}}
+
 {{define "body"}}
     <h2>Latest Snippets</h2>
     {{if .Snippets}}
@@ -14,12 +15,14 @@
         {{range .Snippets}}
         <tr>
             <td><a href='/snippet?id={{.ID}}'>{{.Title}}</a></td>
-            <td>{{.Created}}</td>
+            <!-- Use the new template function here -->
+            <td>{{humanDate .Created}}</td>
             <td>#{{.ID}}</td>
         </tr>
         {{end}}
     </table>
     {{else}}
         <p>There's nothing to see here... yet!</p>
+
     {{end}}
 {{end}}

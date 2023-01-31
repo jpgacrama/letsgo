@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"log"
 	"snippetbox/pkg/models"
+	"strconv"
+	"time"
 )
 
 type SnippetDatabase struct {
@@ -83,11 +85,18 @@ func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 	snippets := []*models.Snippet{}
 	for rows.Next() {
 		s := &models.Snippet{}
-		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+		expiresString := ""
+		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &expiresString)
 		if err != nil {
-			m.errorLog.Printf("\n\t--- Latest(): Error Scanning: %s ---", err)
+			m.errorLog.Printf("\n\t--- Error: %s ---", err)
 			return nil, err
 		}
+		daysToExpire, err := strconv.Atoi(expiresString)
+		if err != nil {
+			m.errorLog.Printf("\n\t--- Error: %s ---", err)
+			return nil, err
+		}
+		s.Expires = time.Now().AddDate(0, 0, daysToExpire)
 		snippets = append(snippets, s)
 	}
 
@@ -102,7 +111,8 @@ func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 	return snippets, nil
 }
 
-func (m *SnippetDatabase) Insert(title, content, expires string) (int, error) {
+// This function takes the title, content and the time it expires
+func (m *SnippetDatabase) Insert(title, content string, expires time.Time) (int, error) {
 	m.infoLog.Println("--- Inside Insert() ---")
 	if m.LatestStatement == nil {
 		// Assumes that even the loggers for SnippetModel were not set yet
@@ -110,7 +120,11 @@ func (m *SnippetDatabase) Insert(title, content, expires string) (int, error) {
 	}
 
 	errorValue := -1
-	result, err := m.InsertStatement.ExecContext(m.ctx, title, content, expires)
+	// Convert expires to a string representing the number of days
+	created := time.Now()
+	numberOfDaysToExpire := expires.Sub(created).Hours() / 24
+
+	result, err := m.InsertStatement.ExecContext(m.ctx, title, content, numberOfDaysToExpire)
 	if err != nil {
 		m.errorLog.Println("\n\t--- Insert(): Error Executing Context ---")
 		m.tx.Rollback()

@@ -13,12 +13,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var created = time.Now()
 var sampleDatabaseContent = &models.Snippet{
 	ID:      0,
 	Title:   "Title",
 	Content: "Content",
-	Created: time.Now(),
-	Expires: "1",
+	Created: created,
+	Expires: created.AddDate(0, 0, 1), // Adding one day later
 }
 
 func NewMock() (*sql.DB, sqlmock.Sqlmock) {
