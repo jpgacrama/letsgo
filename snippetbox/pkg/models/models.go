@@ -11,6 +11,6 @@ type Snippet struct {
 	ID      int
 	Title   string
 	Content string
-	Created time.Time // This is not used by SQL Statements. It just uses UTC_TIMESTAMP()
+	Created time.Time
 	Expires time.Time
 }
