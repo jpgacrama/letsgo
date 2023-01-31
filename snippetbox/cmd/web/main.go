@@ -34,7 +34,7 @@ func main() {
 	infoLog, errorLog := server.CreateLoggers()
 	db, err := openDB(*dsn)
 	if err != nil {
-		errorLog.Fatal(err)
+		errorLog.Fatalf("Error Opening DB Connection: %s", err)
 	}
 	defer db.Close()
 
