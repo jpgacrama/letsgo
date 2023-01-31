@@ -2,6 +2,7 @@ package server
 
 import (
 	"html/template"
+	"log"
 	"path/filepath"
 	"snippetbox/pkg/models"
 )
@@ -16,6 +17,7 @@ func NewTemplateCache(dir string) (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
 	pages, err := filepath.Glob(filepath.Join(dir, "*.page.tmpl"))
 	if err != nil {
+		log.Printf("Error: %s", err)
 		return nil, err
 	}
 
@@ -23,16 +25,19 @@ func NewTemplateCache(dir string) (map[string]*template.Template, error) {
 		name := filepath.Base(page)
 		ts, err := template.ParseFiles(page)
 		if err != nil {
+			log.Printf("Error: %s", err)
 			return nil, err
 		}
 
 		ts, err = ts.ParseGlob(filepath.Join(dir, "*.layout.tmpl"))
 		if err != nil {
+			log.Printf("Error: %s", err)
 			return nil, err
 		}
 
 		ts, err = ts.ParseGlob(filepath.Join(dir, "*.partial.tmpl"))
 		if err != nil {
+			log.Printf("Error: %s", err)
 			return nil, err
 		}
 
