@@ -3,9 +3,11 @@ package snippetbox_test
 import (
 	"database/sql"
 	"log"
+	"math"
 	"snippetbox/cmd/server"
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
+	"strconv"
 	"testing"
 	"time"
 
@@ -54,10 +56,13 @@ func TestInsert(t *testing.T) {
 		return
 	}
 	t.Run("Insert OK Case", func(t *testing.T) {
+		value := math.Ceil(sampleDatabaseContent.Expires.Sub(created).Hours() / 24)
+		numberOfDaysToExpire := strconv.FormatFloat(value, 'f', -1, 64)
+
 		prep.ExpectExec().WithArgs(
 			sampleDatabaseContent.Title,
 			sampleDatabaseContent.Content,
-			sampleDatabaseContent.Expires).WillReturnResult(sqlmock.NewResult(0, 1))
+			numberOfDaysToExpire).WillReturnResult(sqlmock.NewResult(0, 1))
 
 		_, err := repo.Insert(sampleDatabaseContent.Title, sampleDatabaseContent.Content, sampleDatabaseContent.Expires)
 		assert.NoError(t, err)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"math"
 	"snippetbox/pkg/models"
 	"strconv"
 	"time"
@@ -120,17 +121,17 @@ func (m *SnippetDatabase) Insert(title, content string, expires time.Time) (int,
 	errorValue := -1
 	// Convert expires to a string representing the number of days
 	created := time.Now()
-	numberOfDaysToExpire := expires.Sub(created).Hours() / 24
-
+	value := math.Ceil(expires.Sub(created).Hours() / 24)
+	numberOfDaysToExpire := strconv.FormatFloat(value, 'f', -1, 64)
 	result, err := m.InsertStatement.ExecContext(m.ctx, title, content, numberOfDaysToExpire)
 	if err != nil {
-		m.errorLog.Println("\n\t--- Insert(): Error Executing Context ---")
+		m.errorLog.Printf("\n\tError: %s", err)
 		m.tx.Rollback()
 		return errorValue, err
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
-		m.errorLog.Println("\n\t--- Insert(): Error Getting Last Insert ID ---")
+		m.errorLog.Printf("\n\tError: %s", err)
 		return errorValue, err
 	}
 	return int(id), nil
