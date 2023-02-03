@@ -153,7 +153,7 @@ func TestLatest(t *testing.T) {
 	}
 	t.Run("Latest() OK Case", func(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 		prep.ExpectQuery().WillReturnRows(rows)
 
 		output, err := repo.Latest()

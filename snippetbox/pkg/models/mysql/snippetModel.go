@@ -91,12 +91,11 @@ func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 			m.errorLog.Printf("\n\t--- Error: %s ---", err)
 			return nil, err
 		}
-		daysToExpire, err := strconv.Atoi(expiresString)
+		s.Expires, err = time.Parse(time.RFC3339, expiresString)
 		if err != nil {
 			m.errorLog.Printf("\n\t--- Error: %s ---", err)
 			return nil, err
 		}
-		s.Expires = time.Now().AddDate(0, 0, daysToExpire)
 		snippets = append(snippets, s)
 	}
 
