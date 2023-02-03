@@ -27,7 +27,7 @@ func CreateServer(app *Application) (*http.Server, error) {
 	return srv, nil
 }
 
-func createRoutes(fileServer http.Handler, app *Application) (*http.ServeMux, error) {
+func createRoutes(fileServer http.Handler, app *Application) (http.Handler, error) {
 	mux := http.NewServeMux()
 	if mux != nil {
 		mux.HandleFunc("/", app.home)
@@ -37,7 +37,11 @@ func createRoutes(fileServer http.Handler, app *Application) (*http.ServeMux, er
 	} else {
 		return nil, fmt.Errorf("cannot create Handler")
 	}
-	return mux, nil
+
+	// Pass the servemux as the 'next' parameter to the secureHeaders middleware.
+	// Because secureHeaders is just a function, and the function returns a
+	// http.Handler we don't need to do anything else.
+	return secureHeaders(mux), nil
 }
 
 func createFileServer() http.Handler {
