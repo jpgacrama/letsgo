@@ -68,13 +68,6 @@ func (app *Application) createRoutes(fileServer http.Handler) (http.Handler, err
 	return app.logRequest(secureHeaders(mux)), nil
 }
 
-func (app *Application) logRequest(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		app.InfoLog.Printf("%s - %s %s %s", r.RemoteAddr, r.Proto, r.Method, r.URL.RequestURI())
-		next.ServeHTTP(w, r)
-	})
-}
-
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		app.ErrorLog.Printf("\n\t----- home() error. Path is: %s -----", r.URL.Path)
