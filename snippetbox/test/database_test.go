@@ -108,7 +108,7 @@ func TestGet(t *testing.T) {
 
 	t.Run("Get() OK Case", func(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
 
 		output, err := repo.Get(sampleDatabaseContent.ID)
@@ -117,7 +117,7 @@ func TestGet(t *testing.T) {
 	})
 	t.Run("Get() NOK Case", func(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 
 		wrongId := 2
 		output, err := repo.Get(wrongId)

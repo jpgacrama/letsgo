@@ -59,7 +59,7 @@ func TestHomePage(t *testing.T) {
 		// Adding ExpectPrepare to DB Expectations
 		sampleDatabaseContent.ID = 1
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 		prep.ExpectQuery().WillReturnRows(rows)
 
 		request := newRequest(http.MethodGet, "")
@@ -157,7 +157,7 @@ func TestShowSnippet(t *testing.T) {
 		// Adding ExpectPrepare to DB Expectations
 		sampleDatabaseContent.ID = 1
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
 
 		server.Handler.ServeHTTP(response, request)
@@ -175,7 +175,7 @@ func TestShowSnippet(t *testing.T) {
 		sampleDatabaseContent.ID = 0
 		mock.ExpectBegin()
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
 
 		server.Handler.ServeHTTP(response, request)

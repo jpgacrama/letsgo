@@ -156,12 +156,11 @@ func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
 		m.tx.Rollback()
 		return nil, err
 	default:
-		daysToExpire, err := strconv.Atoi(expiresString)
+		s.Expires, err = time.Parse(time.RFC3339, expiresString)
 		if err != nil {
 			m.errorLog.Printf("\n\t--- Error: %s ---", err)
 			return nil, err
 		}
-		s.Expires = time.Now().AddDate(0, 0, daysToExpire)
 		m.infoLog.Printf("ID is %v, created on %s\n", s.ID, s.Created)
 		return s, nil
 	}
