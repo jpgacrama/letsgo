@@ -32,6 +32,49 @@ var showSnippetTemplateFiles = []string{
 	"./ui/html/footer.partial.tmpl",
 }
 
+var StaticFolder = "./ui/static"
+
+func CreateServer(app *Application) (*http.Server, error) {
+	fileServer := createFileServer()
+	routes, err := app.createRoutes(fileServer)
+	if err != nil {
+		msg := "creating routes failed"
+		app.ErrorLog.Println(msg)
+		return nil, fmt.Errorf(msg)
+	}
+
+	srv := &http.Server{
+		Addr:     *app.Port,
+		ErrorLog: app.ErrorLog,
+		Handler:  routes,
+	}
+	return srv, nil
+}
+
+func createFileServer() http.Handler {
+	return http.FileServer(http.Dir(StaticFolder))
+}
+
+func (app *Application) createRoutes(fileServer http.Handler) (http.Handler, error) {
+	mux := http.NewServeMux()
+	if mux != nil {
+		mux.HandleFunc("/", app.home)
+		mux.HandleFunc("/snippet", app.showSnippet)
+		mux.HandleFunc("/snippet/create", app.createSnippet)
+		mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+	} else {
+		return nil, fmt.Errorf("cannot create Handler")
+	}
+	return app.logRequest(secureHeaders(mux)), nil
+}
+
+func (app *Application) logRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		app.InfoLog.Printf("%s - %s %s %s", r.RemoteAddr, r.Proto, r.Method, r.URL.RequestURI())
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	app.InfoLog.Println("----- Inside home() ---- ")
 	if r.URL.Path != "/" {
