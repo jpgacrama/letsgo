@@ -70,7 +70,6 @@ func (m *SnippetDatabase) Close() {
 
 // NOTE: rows.Close() must be called by the calling function!
 func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
-	m.infoLog.Println("--- Inside Latest() ---")
 	if m.LatestStatement == nil {
 		m.errorLog.Fatalf("\n\t---- Call NewSnippetModel() first----")
 	}
@@ -112,7 +111,6 @@ func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 
 // This function takes the title, content and the time it expires
 func (m *SnippetDatabase) Insert(title, content string, expires time.Time) (int, error) {
-	m.infoLog.Println("--- Inside Insert() ---")
 	if m.LatestStatement == nil {
 		m.errorLog.Fatalf("\n\t---- Call NewSnippetModel() first----")
 	}
@@ -137,7 +135,6 @@ func (m *SnippetDatabase) Insert(title, content string, expires time.Time) (int,
 }
 
 func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
-	m.infoLog.Println("--- Inside Get() ---")
 	if m.LatestStatement == nil {
 		// Assumes that even the loggers for SnippetModel were not set yet
 		m.errorLog.Fatalf("\n\t---- Call NewSnippetModel() first----")

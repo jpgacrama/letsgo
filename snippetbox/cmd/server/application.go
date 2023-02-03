@@ -76,7 +76,6 @@ func (app *Application) logRequest(next http.Handler) http.Handler {
 }
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
-	app.InfoLog.Println("----- Inside home() ---- ")
 	if r.URL.Path != "/" {
 		app.ErrorLog.Printf("\n\t----- home() error. Path is: %s -----", r.URL.Path)
 		app.notFound(w)
@@ -85,7 +84,7 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 
 	s, err := app.SnippetDB.Latest()
 	if err != nil {
-		app.ErrorLog.Printf("\n\t----- home(): Error Found: %s -----", err)
+		app.ErrorLog.Printf("\n\tError: %s", err)
 		app.serverError(w, err)
 		return
 	}
@@ -100,7 +99,7 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
-		app.ErrorLog.Printf("\n\t---- showSnippet() error: %s ----", err)
+		app.ErrorLog.Printf("\n\tError: %s", err)
 		app.notFound(w)
 		return
 	}
@@ -108,11 +107,11 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	snippetContents, err := app.SnippetDB.Get(id)
 	switch {
 	case err == models.ErrNoRecord:
-		app.ErrorLog.Printf("\n\t---- showSnippet() error: %s ----", err)
+		app.ErrorLog.Printf("\n\tError: %s", err)
 		app.notFound(w)
 		return
 	case err != nil:
-		app.ErrorLog.Printf("\n\t---- showSnippet() error: %s ----", err)
+		app.ErrorLog.Printf("\n\tError: %s", err)
 		app.serverError(w, err)
 		return
 	}
@@ -124,23 +123,22 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
-	app.InfoLog.Println("----- Inside CreateSnippet() ---- ")
 	if r.Method != "POST" {
 		w.Header().Set("Allow", "POST")
 		app.clientError(w, http.StatusMethodNotAllowed)
 		return
 	}
 
-	if app.Snippet == nil {
+	switch {
+	case app.Snippet == nil:
 		app.ErrorLog.Println("Sql Record is not defined")
 		app.clientError(w, http.StatusBadRequest)
 		return
-	}
-
-	if app.SnippetDB == nil {
-		app.ErrorLog.Println("Snippets is not defined")
+	case app.SnippetDB == nil:
+		app.ErrorLog.Println("Snippet Database is not defined")
 		app.clientError(w, http.StatusBadRequest)
 		return
+
 	}
 
 	id, err := app.SnippetDB.Insert(
