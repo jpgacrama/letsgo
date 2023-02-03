@@ -65,7 +65,8 @@ func (app *Application) createRoutes(fileServer http.Handler) (http.Handler, err
 	} else {
 		return nil, fmt.Errorf("cannot create Handler")
 	}
-	return app.logRequest(secureHeaders(mux)), nil
+
+	return app.recoverPanic(app.logRequest(secureHeaders(mux))), nil
 }
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
