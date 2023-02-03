@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/justinas/alice"
 	"html/template"
 	"log"
 	"net/http"
@@ -56,6 +57,7 @@ func createFileServer() http.Handler {
 }
 
 func (app *Application) createRoutes(fileServer http.Handler) (http.Handler, error) {
+	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 	mux := http.NewServeMux()
 	if mux != nil {
 		mux.HandleFunc("/", app.home)
@@ -66,7 +68,7 @@ func (app *Application) createRoutes(fileServer http.Handler) (http.Handler, err
 		return nil, fmt.Errorf("cannot create Handler")
 	}
 
-	return app.recoverPanic(app.logRequest(secureHeaders(mux))), nil
+	return standardMiddleware.Then(mux), nil
 }
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
