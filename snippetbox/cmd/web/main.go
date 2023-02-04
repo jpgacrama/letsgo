@@ -3,24 +3,19 @@ package main
 import (
 	"database/sql"
 	"flag"
-	"log"
 	"snippetbox/cmd/server"
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type application struct {
-	errorLog *log.Logger
-	infoLog  *log.Logger
-}
-
 func parseUserInputs() (*string, *string) {
-	addr := flag.String("addr", ":4000", "HTTP network address")
+	port := flag.String("port", ":4000", "HTTP network address")
 	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
 	flag.Parse()
-	return addr, dsn
+	return port, dsn
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -36,13 +31,19 @@ func openDB(dsn string) (*sql.DB, error) {
 }
 
 func main() {
-	addr, dsn := parseUserInputs()
+	port, dsn := parseUserInputs()
 	infoLog, errorLog := server.CreateLoggers()
 	db, err := openDB(*dsn)
 	if err != nil {
-		errorLog.Fatal(err)
+		errorLog.Fatalf("Error Opening DB Connection: %s", err)
 	}
 	defer db.Close()
+
+	// Initialize a new template cache...
+	templateCache, err := server.NewTemplateCache("./ui/html/")
+	if err != nil {
+		errorLog.Fatal(err)
+	}
 
 	snippetModel, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	if err != nil {
@@ -50,20 +51,24 @@ func main() {
 		return
 	}
 
+	created := time.Now()
+	expires := created.AddDate(0, 0, 1)
 	server, err := server.CreateServer(
 		&server.Application{
-			Addr:     addr,
-			InfoLog:  infoLog,
-			ErrorLog: errorLog,
-			DB:       snippetModel,
-			Snippet: &models.SnippetContents{
+			Port:      port,
+			InfoLog:   infoLog,
+			ErrorLog:  errorLog,
+			SnippetDB: snippetModel,
+			Snippet: &models.Snippet{
 				Title:   "O snail",
 				Content: "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa",
-				Expires: "7",
+				Created: created,
+				Expires: expires,
 			},
+			TemplateCache: templateCache,
 		})
 	if err == nil {
-		infoLog.Printf("Starting server on %s", *addr)
+		infoLog.Printf("Starting server on %s", *port)
 		errorLog.Fatal(server.ListenAndServe())
 	}
 }

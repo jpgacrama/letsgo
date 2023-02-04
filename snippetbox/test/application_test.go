@@ -13,20 +13,12 @@ import (
 	"time"
 )
 
-var templateFiles = []string{
-	"../ui/html/home.page.tmpl",
-	"../ui/html/base.layout.tmpl",
-	"../ui/html/footer.partial.tmpl",
-}
-
-var staticFolder = "../ui/static"
+var port = ":4000"
+var errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+var infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 
 func TestHomePage(t *testing.T) {
-	addr := ":4000"
-	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	db, mock := NewMock()
-
 	// New mocks due to NewSnippetModel() factory
 	mock.ExpectBegin()
 	_ = mock.ExpectPrepare("SELECT ...") // SELECT for Latest Statement
@@ -44,15 +36,20 @@ func TestHomePage(t *testing.T) {
 		log.Fatalf("Creating NewSnippetModel failed")
 		return
 	}
+	templateCache, err := server.NewTemplateCache("../ui/html/")
+	if err != nil {
+		errorLog.Fatal(err)
+	}
 
 	app := &server.Application{
-		Addr:     &addr,
-		InfoLog:  infoLog,
-		ErrorLog: errorLog,
-		DB:       repo,
+		Port:          &port,
+		InfoLog:       infoLog,
+		ErrorLog:      errorLog,
+		SnippetDB:     repo,
+		TemplateCache: templateCache,
 	}
 	t.Run("checking home page OK Case", func(t *testing.T) {
-		server, err := server.CreateServer(app, templateFiles...)
+		server, err := server.CreateServer(app)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
@@ -60,7 +57,7 @@ func TestHomePage(t *testing.T) {
 		// Adding ExpectPrepare to DB Expectations
 		sampleDatabaseContent.ID = 1
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 		prep.ExpectQuery().WillReturnRows(rows)
 
 		request := newRequest(http.MethodGet, "")
@@ -69,7 +66,7 @@ func TestHomePage(t *testing.T) {
 		assertStatus(t, response, http.StatusOK)
 	})
 	t.Run("checking home page NOK Case", func(t *testing.T) {
-		server, err := server.CreateServer(app, templateFiles...)
+		server, err := server.CreateServer(app)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
@@ -78,20 +75,27 @@ func TestHomePage(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
 	})
+	t.Run("checking home page NOK Case - POST instead of GET", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodPost, "")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusMethodNotAllowed)
+	})
 }
 
 func TestStaticPage(t *testing.T) {
-	server.StaticFolder = staticFolder
-	addr := ":4000"
-	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	server.StaticFolder = "../ui/static"
 	app := &server.Application{
-		Addr:     &addr,
+		Port:     &port,
 		InfoLog:  infoLog,
 		ErrorLog: errorLog,
 	}
 	t.Run("checking static page OK Case", func(t *testing.T) {
-		server, err := server.CreateServer(app, templateFiles...)
+		server, err := server.CreateServer(app)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
@@ -101,7 +105,7 @@ func TestStaticPage(t *testing.T) {
 		assertStatus(t, response, http.StatusOK)
 	})
 	t.Run("checking static page NOK Case", func(t *testing.T) {
-		server, err := server.CreateServer(app, templateFiles...)
+		server, err := server.CreateServer(app)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
@@ -110,12 +114,19 @@ func TestStaticPage(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
 	})
+	t.Run("checking static page NOK Case - POST instead of GET", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodPost, "static/123")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusMethodNotAllowed)
+	})
 }
 
 func TestShowSnippet(t *testing.T) {
-	addr := ":4000"
-	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	db, mock := NewMock()
 
 	// New mocks due to NewSnippetModel() factory
@@ -135,31 +146,37 @@ func TestShowSnippet(t *testing.T) {
 		log.Fatalf("Creating NewSnippetModel failed")
 		return
 	}
+	templateCache, err := server.NewTemplateCache("../ui/html/")
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
 	app := &server.Application{
-		Addr:     &addr,
-		InfoLog:  infoLog,
-		ErrorLog: errorLog,
-		DB:       repo,
+		Port:          &port,
+		InfoLog:       infoLog,
+		ErrorLog:      errorLog,
+		SnippetDB:     repo,
+		TemplateCache: templateCache,
 	}
 	t.Run("checking show snippet OK Case", func(t *testing.T) {
-		server, err := server.CreateServer(app, templateFiles...)
+		server, err := server.CreateServer(app)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
-		request := newRequest(http.MethodGet, "snippet?id=1")
+		request := newRequest(http.MethodGet, "snippet/1")
 		response := httptest.NewRecorder()
 
 		// Adding ExpectPrepare to DB Expectations
 		sampleDatabaseContent.ID = 1
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
 
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
 	})
 	t.Run("checking show snippet NOK Case", func(t *testing.T) {
-		server, err := server.CreateServer(app, templateFiles...)
+		server, err := server.CreateServer(app)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
@@ -170,12 +187,49 @@ func TestShowSnippet(t *testing.T) {
 		sampleDatabaseContent.ID = 0
 		mock.ExpectBegin()
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
 
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
 	})
+	t.Run("checking show snippet NOK Case - POST instead of GET", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodPost, "snippet/1")
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		sampleDatabaseContent.ID = 0
+		mock.ExpectBegin()
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusMethodNotAllowed)
+	})
+	t.Run("checking show snippet NOK Case - Malformed snippet URL", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodGet, "snippet?id=0")
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		sampleDatabaseContent.ID = 0
+		mock.ExpectBegin()
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusNotFound)
+	})
+
 }
 
 func newRequest(requestType, str string) *http.Request {

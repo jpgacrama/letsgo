@@ -7,10 +7,10 @@ import (
 
 var ErrNoRecord = errors.New("models: no matching record found")
 
-type SnippetContents struct {
+type Snippet struct {
 	ID      int
 	Title   string
 	Content string
 	Created time.Time
-	Expires string
+	Expires time.Time
 }

@@ -3,9 +3,11 @@ package snippetbox_test
 import (
 	"database/sql"
 	"log"
+	"math"
 	"snippetbox/cmd/server"
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
+	"strconv"
 	"testing"
 	"time"
 
@@ -13,12 +15,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var sampleDatabaseContent = &models.SnippetContents{
+var created = time.Now()
+var sampleDatabaseContent = &models.Snippet{
 	ID:      0,
 	Title:   "Title",
 	Content: "Content",
-	Created: time.Now(),
-	Expires: "1",
+	Created: created,
+	Expires: created.AddDate(0, 0, 1), // Adding one day later
 }
 
 func NewMock() (*sql.DB, sqlmock.Sqlmock) {
@@ -53,10 +56,13 @@ func TestInsert(t *testing.T) {
 		return
 	}
 	t.Run("Insert OK Case", func(t *testing.T) {
+		value := math.Ceil(sampleDatabaseContent.Expires.Sub(created).Hours() / 24)
+		numberOfDaysToExpire := strconv.FormatFloat(value, 'f', -1, 64)
+
 		prep.ExpectExec().WithArgs(
 			sampleDatabaseContent.Title,
 			sampleDatabaseContent.Content,
-			sampleDatabaseContent.Expires).WillReturnResult(sqlmock.NewResult(0, 1))
+			numberOfDaysToExpire).WillReturnResult(sqlmock.NewResult(0, 1))
 
 		_, err := repo.Insert(sampleDatabaseContent.Title, sampleDatabaseContent.Content, sampleDatabaseContent.Expires)
 		assert.NoError(t, err)
@@ -102,7 +108,7 @@ func TestGet(t *testing.T) {
 
 	t.Run("Get() OK Case", func(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
 
 		output, err := repo.Get(sampleDatabaseContent.ID)
@@ -111,7 +117,7 @@ func TestGet(t *testing.T) {
 	})
 	t.Run("Get() NOK Case", func(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 
 		wrongId := 2
 		output, err := repo.Get(wrongId)
@@ -147,7 +153,7 @@ func TestLatest(t *testing.T) {
 	}
 	t.Run("Latest() OK Case", func(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "1")
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 		prep.ExpectQuery().WillReturnRows(rows)
 
 		output, err := repo.Latest()

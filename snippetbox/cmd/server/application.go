@@ -2,93 +2,131 @@ package server
 
 import (
 	"fmt"
-	// "html/template"
+	"html/template"
 	"log"
 	"net/http"
 	"runtime/debug"
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
 	"strconv"
+
+	"github.com/justinas/alice"
+
+	"github.com/bmizerany/pat"
 )
 
+var StaticFolder = "./ui/static"
+
 type Application struct {
-	Addr     *string
-	InfoLog  *log.Logger
-	ErrorLog *log.Logger
-	DB       *mysql.SnippetModel
-	Snippet  *models.SnippetContents
+	Port          *string
+	InfoLog       *log.Logger
+	ErrorLog      *log.Logger
+	SnippetDB     *mysql.SnippetDatabase
+	Snippet       *models.Snippet
+	TemplateCache map[string]*template.Template
 }
 
-func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
-	app.InfoLog.Println("----- Inside Home() ---- ")
-	if r.URL.Path != "/" {
-		app.notFound(w)
-		return
-	}
+var homePageTemplateFiles = []string{
+	"./ui/html/home.page.tmpl",
+	"./ui/html/base.layout.tmpl",
+	"./ui/html/footer.partial.tmpl",
+}
 
-	s, err := app.DB.Latest()
+var showSnippetTemplateFiles = []string{
+	"./ui/html/show.page.tmpl",
+	"./ui/html/base.layout.tmpl",
+	"./ui/html/footer.partial.tmpl",
+}
+
+func CreateServer(app *Application) (*http.Server, error) {
+	routes, err := app.createRoutes()
 	if err != nil {
-		app.ErrorLog.Printf("\n\t-----Home(): Error Found: %s -----", err)
+		msg := "creating routes failed"
+		app.ErrorLog.Println(msg)
+		return nil, fmt.Errorf(msg)
+	}
+
+	srv := &http.Server{
+		Addr:     *app.Port,
+		ErrorLog: app.ErrorLog,
+		Handler:  routes,
+	}
+	return srv, nil
+}
+
+func (app *Application) createRoutes() (http.Handler, error) {
+	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+	mux := pat.New()
+	mux.Get("/", http.HandlerFunc(app.home))
+	mux.Get("/snippet/create", http.HandlerFunc(app.createSnippetForm))
+	mux.Post("/snippet/create", http.HandlerFunc(app.createSnippet))
+	mux.Get("/snippet/:id", http.HandlerFunc(app.showSnippet))
+
+	fileServer := http.FileServer(http.Dir(StaticFolder))
+	mux.Get("/static/", http.StripPrefix("/static", fileServer))
+	return standardMiddleware.Then(mux), nil
+}
+
+// Add a new createSnippetForm handler, which for now returns a placeholder response.
+func (app *Application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Create a new snippet..."))
+}
+
+func (app *Application) home(w http.ResponseWriter, r *http.Request) {
+	s, err := app.SnippetDB.Latest()
+	if err != nil {
+		app.ErrorLog.Printf("\n\tError: %s", err)
 		app.serverError(w, err)
 		return
 	}
 
-	for _, snippet := range s {
-		fmt.Fprintf(w, "%v\n", snippet)
-	}
-
-	// ts, err := template.ParseFiles(templateFiles...)
-	// if err != nil {
-	// 	app.serverError(w, err)
-	// 	return
-	// }
-	// err = ts.Execute(w, nil)
-	// if err != nil {
-	// 	app.serverError(w, err)
-	// }
+	// Use the new render helper.
+	app.render(w, r, "home.page.tmpl", &templateData{
+		Snippet:  nil,
+		Snippets: s,
+	})
 }
 
-func (app *Application) ShowSnippet(w http.ResponseWriter, r *http.Request) {
-	app.InfoLog.Println("----- Inside ShowSnippet() ---- ")
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
 	if err != nil || id < 1 {
+		app.ErrorLog.Printf("\n\tError: %s", err)
 		app.notFound(w)
 		return
 	}
 
-	result, err := app.DB.Get(id)
-	if err == models.ErrNoRecord {
+	snippetContents, err := app.SnippetDB.Get(id)
+	switch {
+	case err == models.ErrNoRecord:
+		app.ErrorLog.Printf("\n\tError: %s", err)
 		app.notFound(w)
 		return
-	} else if err != nil {
+	case err != nil:
+		app.ErrorLog.Printf("\n\tError: %s", err)
 		app.serverError(w, err)
 		return
 	}
 
-	fmt.Fprintf(w, "%v", result)
+	// Use the new render helper.
+	app.render(w, r, "show.page.tmpl", &templateData{
+		Snippet: snippetContents,
+	})
 }
 
-func (app *Application) CreateSnippet(w http.ResponseWriter, r *http.Request) {
-	app.InfoLog.Println("----- Inside CreateSnippet() ---- ")
-	if r.Method != "POST" {
-		w.Header().Set("Allow", "POST")
-		app.clientError(w, http.StatusMethodNotAllowed)
-		return
-	}
-
-	if app.Snippet == nil {
+func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
+	switch {
+	case app.Snippet == nil:
 		app.ErrorLog.Println("Sql Record is not defined")
 		app.clientError(w, http.StatusBadRequest)
 		return
-	}
-
-	if app.DB == nil {
-		app.ErrorLog.Println("Snippets is not defined")
+	case app.SnippetDB == nil:
+		app.ErrorLog.Println("Snippet Database is not defined")
 		app.clientError(w, http.StatusBadRequest)
 		return
+
 	}
 
-	id, err := app.DB.Insert(
+	id, err := app.SnippetDB.Insert(
 		app.Snippet.Title,
 		app.Snippet.Content,
 		app.Snippet.Expires)
@@ -96,7 +134,7 @@ func (app *Application) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	http.Redirect(w, r, fmt.Sprintf("/snippet?id=%d", id), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 }
 
 func (app *Application) serverError(w http.ResponseWriter, err error) {
