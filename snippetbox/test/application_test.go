@@ -114,6 +114,17 @@ func TestStaticPage(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
 	})
+	t.Run("checking static page NOK Case - POST instead of GET", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodPost, "static/123")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusMethodNotAllowed)
+	})
+
 }
 
 func TestShowSnippet(t *testing.T) {
