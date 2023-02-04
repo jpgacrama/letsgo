@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"os"
 	"runtime/debug"
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
@@ -61,18 +60,10 @@ func (app *Application) createRoutes() (http.Handler, error) {
 	mux.Get("/", http.HandlerFunc(app.home))
 	mux.Get("/snippet/create", http.HandlerFunc(app.createSnippetForm))
 	mux.Post("/snippet/create", http.HandlerFunc(app.createSnippet))
-	mux.Get("/snippet/:id", http.HandlerFunc(app.showSnippet)) // Moved down
+	mux.Get("/snippet/:id", http.HandlerFunc(app.showSnippet))
 
 	fileServer := http.FileServer(http.Dir(StaticFolder))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
-
-	// Get current working directory
-	pwd, err := os.Getwd()
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("Current working directory:", pwd)
-
 	return standardMiddleware.Then(mux), nil
 }
 
