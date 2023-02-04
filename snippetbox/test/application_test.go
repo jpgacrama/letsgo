@@ -80,7 +80,7 @@ func TestHomePage(t *testing.T) {
 }
 
 func TestStaticPage(t *testing.T) {
-	server.StaticFolder = staticFolder
+	server.StaticFolder = "../ui/static"
 	port := ":4000"
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -112,6 +112,7 @@ func TestStaticPage(t *testing.T) {
 }
 
 func TestShowSnippet(t *testing.T) {
+	server.StaticFolder = "../ui/static"
 	port := ":4000"
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -151,7 +152,7 @@ func TestShowSnippet(t *testing.T) {
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
 		}
-		request := newRequest(http.MethodGet, "snippet?id=1")
+		request := newRequest(http.MethodGet, "snippet/1")
 		response := httptest.NewRecorder()
 
 		// Adding ExpectPrepare to DB Expectations

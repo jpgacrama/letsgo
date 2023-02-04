@@ -1,4 +1,3 @@
-
 {{template "base" .}}
 
 {{define "title"}}Home{{end}}
@@ -13,9 +12,10 @@
             <th>ID</th>
         </tr>
         {{range .Snippets}}
+
         <tr>
-            <td><a href='/snippet?id={{.ID}}'>{{.Title}}</a></td>
-            <!-- Use the new template function here -->
+            <!-- Use the new semantic URL style-->
+            <td><a href='/snippet/{{.ID}}'>{{.Title}}</a></td>
             <td>{{humanDate .Created}}</td>
             <td>#{{.ID}}</td>
         </tr>
@@ -23,6 +23,5 @@
     </table>
     {{else}}
         <p>There's nothing to see here... yet!</p>
-
     {{end}}
 {{end}}

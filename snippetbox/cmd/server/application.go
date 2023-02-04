@@ -2,15 +2,21 @@ package server
 
 import (
 	"fmt"
-	"github.com/justinas/alice"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"runtime/debug"
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
 	"strconv"
+
+	"github.com/justinas/alice"
+
+	"github.com/bmizerany/pat"
 )
+
+var StaticFolder = "./ui/static"
 
 type Application struct {
 	Port          *string
@@ -33,11 +39,8 @@ var showSnippetTemplateFiles = []string{
 	"./ui/html/footer.partial.tmpl",
 }
 
-var StaticFolder = "./ui/static"
-
 func CreateServer(app *Application) (*http.Server, error) {
-	fileServer := createFileServer()
-	routes, err := app.createRoutes(fileServer)
+	routes, err := app.createRoutes()
 	if err != nil {
 		msg := "creating routes failed"
 		app.ErrorLog.Println(msg)
@@ -52,32 +55,33 @@ func CreateServer(app *Application) (*http.Server, error) {
 	return srv, nil
 }
 
-func createFileServer() http.Handler {
-	return http.FileServer(http.Dir(StaticFolder))
-}
-
-func (app *Application) createRoutes(fileServer http.Handler) (http.Handler, error) {
+func (app *Application) createRoutes() (http.Handler, error) {
 	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
-	mux := http.NewServeMux()
-	if mux != nil {
-		mux.HandleFunc("/", app.home)
-		mux.HandleFunc("/snippet", app.showSnippet)
-		mux.HandleFunc("/snippet/create", app.createSnippet)
-		mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-	} else {
-		return nil, fmt.Errorf("cannot create Handler")
+	mux := pat.New()
+	mux.Get("/", http.HandlerFunc(app.home))
+	mux.Get("/snippet/create", http.HandlerFunc(app.createSnippetForm))
+	mux.Post("/snippet/create", http.HandlerFunc(app.createSnippet))
+	mux.Get("/snippet/:id", http.HandlerFunc(app.showSnippet)) // Moved down
+
+	fileServer := http.FileServer(http.Dir(StaticFolder))
+	mux.Get("/static/", http.StripPrefix("/static", fileServer))
+
+	// Get current working directory
+	pwd, err := os.Getwd()
+	if err != nil {
+		fmt.Println(err)
 	}
+	fmt.Println("Current working directory:", pwd)
 
 	return standardMiddleware.Then(mux), nil
 }
 
-func (app *Application) home(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		app.ErrorLog.Printf("\n\t----- home() error. Path is: %s -----", r.URL.Path)
-		app.notFound(w)
-		return
-	}
+// Add a new createSnippetForm handler, which for now returns a placeholder response.
+func (app *Application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Create a new snippet..."))
+}
 
+func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	s, err := app.SnippetDB.Latest()
 	if err != nil {
 		app.ErrorLog.Printf("\n\tError: %s", err)
@@ -93,7 +97,7 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
 	if err != nil || id < 1 {
 		app.ErrorLog.Printf("\n\tError: %s", err)
 		app.notFound(w)
@@ -119,12 +123,6 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		w.Header().Set("Allow", "POST")
-		app.clientError(w, http.StatusMethodNotAllowed)
-		return
-	}
-
 	switch {
 	case app.Snippet == nil:
 		app.ErrorLog.Println("Sql Record is not defined")
@@ -145,7 +143,7 @@ func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	http.Redirect(w, r, fmt.Sprintf("/snippet?id=%d", id), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 }
 
 func (app *Application) serverError(w http.ResponseWriter, err error) {
