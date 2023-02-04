@@ -280,6 +280,42 @@ func TestCreateSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
 	})
+	t.Run("checking create snippet NOK Case - malformed URL", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodGet, "snippet/create/?id=1")
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		sampleDatabaseContent.ID = 1
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusNotFound)
+	})
+	// We are attempting to pass the record to the Database, but it does not exist yet.
+	t.Run("checking create snippet NOK Case - POST instead of GET", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodPost, "snippet/create")
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		sampleDatabaseContent.ID = 1
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusBadRequest)
+	})
+
 }
 
 func newRequest(requestType, str string) *http.Request {
