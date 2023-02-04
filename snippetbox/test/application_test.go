@@ -13,14 +13,12 @@ import (
 	"time"
 )
 
-var staticFolder = "../ui/static"
+var port = ":4000"
+var errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+var infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 
 func TestHomePage(t *testing.T) {
-	port := ":4000"
-	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	db, mock := NewMock()
-
 	// New mocks due to NewSnippetModel() factory
 	mock.ExpectBegin()
 	_ = mock.ExpectPrepare("SELECT ...") // SELECT for Latest Statement
@@ -81,9 +79,6 @@ func TestHomePage(t *testing.T) {
 
 func TestStaticPage(t *testing.T) {
 	server.StaticFolder = "../ui/static"
-	port := ":4000"
-	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	app := &server.Application{
 		Port:     &port,
 		InfoLog:  infoLog,
@@ -112,10 +107,7 @@ func TestStaticPage(t *testing.T) {
 }
 
 func TestShowSnippet(t *testing.T) {
-	server.StaticFolder = "../ui/static"
-	port := ":4000"
-	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+
 	db, mock := NewMock()
 
 	// New mocks due to NewSnippetModel() factory
