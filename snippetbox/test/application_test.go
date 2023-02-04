@@ -229,7 +229,57 @@ func TestShowSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
 	})
+}
 
+func TestCreateSnippet(t *testing.T) {
+	db, mock := NewMock()
+
+	// New mocks due to NewSnippetModel() factory
+	mock.ExpectBegin()
+	_ = mock.ExpectPrepare("SELECT ...") // SELECT for Latest Statement
+	_ = mock.ExpectPrepare("INSERT ...")
+	prep := mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
+
+	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
+	defer func() {
+		if err == nil {
+			repo.Close()
+		}
+	}()
+
+	if err != nil {
+		log.Fatalf("Creating NewSnippetModel failed")
+		return
+	}
+	templateCache, err := server.NewTemplateCache("../ui/html/")
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
+	app := &server.Application{
+		Port:          &port,
+		InfoLog:       infoLog,
+		ErrorLog:      errorLog,
+		SnippetDB:     repo,
+		TemplateCache: templateCache,
+	}
+	t.Run("checking create snippet OK Case", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodGet, "snippet/create")
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		sampleDatabaseContent.ID = 1
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
 }
 
 func newRequest(requestType, str string) *http.Request {
