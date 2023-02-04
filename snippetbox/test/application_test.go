@@ -124,11 +124,9 @@ func TestStaticPage(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusMethodNotAllowed)
 	})
-
 }
 
 func TestShowSnippet(t *testing.T) {
-
 	db, mock := NewMock()
 
 	// New mocks due to NewSnippetModel() factory
@@ -195,6 +193,43 @@ func TestShowSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
 	})
+	t.Run("checking show snippet NOK Case - POST instead of GET", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodPost, "snippet/1")
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		sampleDatabaseContent.ID = 0
+		mock.ExpectBegin()
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusMethodNotAllowed)
+	})
+	t.Run("checking show snippet NOK Case - Malformed snippet URL", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodGet, "snippet?id=0")
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		sampleDatabaseContent.ID = 0
+		mock.ExpectBegin()
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusNotFound)
+	})
+
 }
 
 func newRequest(requestType, str string) *http.Request {
