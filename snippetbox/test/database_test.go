@@ -3,11 +3,9 @@ package snippetbox_test
 import (
 	"database/sql"
 	"log"
-	"math"
 	"snippetbox/cmd/server"
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
-	"strconv"
 	"testing"
 	"time"
 
@@ -17,11 +15,10 @@ import (
 
 var created = time.Now()
 var sampleDatabaseContent = &models.Snippet{
-	ID:      0,
+	ID:      1,
 	Title:   "Title",
 	Content: "Content",
 	Created: created,
-	Expires: created.AddDate(0, 0, 1), // Adding one day later
 }
 
 func NewMock() (*sql.DB, sqlmock.Sqlmock) {
@@ -56,28 +53,21 @@ func TestInsert(t *testing.T) {
 		return
 	}
 	t.Run("Insert OK Case", func(t *testing.T) {
-		value := math.Ceil(sampleDatabaseContent.Expires.Sub(created).Hours() / 24)
-		numberOfDaysToExpire := strconv.FormatFloat(value, 'f', -1, 64)
-
 		prep.ExpectExec().WithArgs(
 			sampleDatabaseContent.Title,
 			sampleDatabaseContent.Content,
-			numberOfDaysToExpire).WillReturnResult(sqlmock.NewResult(0, 1))
+			"1").WillReturnResult(sqlmock.NewResult(0, 1))
 
-		_, err := repo.Insert(sampleDatabaseContent.Title, sampleDatabaseContent.Content, sampleDatabaseContent.Expires)
+		_, err := repo.Insert(sampleDatabaseContent.Title, sampleDatabaseContent.Content, "1")
 		assert.NoError(t, err)
 	})
 	t.Run("Insert NOK Case", func(t *testing.T) {
-		query := "INSERT OR UPDATE INTO snippet \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
-
-		mock.ExpectBegin()
-		prep := mock.ExpectPrepare(query)
-		prep.ExpectExec().WithArgs(
+		query := "INSERT INTO snippets \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
+		mock.ExpectQuery(query).WithArgs(
 			sampleDatabaseContent.Title,
 			sampleDatabaseContent.Content,
-			sampleDatabaseContent.Expires).WillReturnResult(sqlmock.NewResult(0, 0))
-
-		_, err := repo.Insert(sampleDatabaseContent.Title, sampleDatabaseContent.Content, sampleDatabaseContent.Expires)
+			"1").WillReturnError(err)
+		_, err := repo.Insert(sampleDatabaseContent.Title, sampleDatabaseContent.Content, "1")
 		assert.Error(t, err)
 	})
 }
