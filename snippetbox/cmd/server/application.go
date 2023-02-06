@@ -21,8 +21,7 @@ type Application struct {
 	Port          *string
 	InfoLog       *log.Logger
 	ErrorLog      *log.Logger
-	SnippetDB     *mysql.SnippetDatabase
-	Snippet       *models.Snippet
+	Snippets      *mysql.SnippetDatabase
 	TemplateCache map[string]*template.Template
 }
 
@@ -64,16 +63,19 @@ func (app *Application) createRoutes() (http.Handler, error) {
 
 	fileServer := http.FileServer(http.Dir(StaticFolder))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
+
+	// Adding a catch-all route, and say error 404
+	mux.Get("/{.*}", http.HandlerFunc(app.notFound))
+
 	return standardMiddleware.Then(mux), nil
 }
 
-// Add a new createSnippetForm handler, which for now returns a placeholder response.
 func (app *Application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Create a new snippet..."))
+	app.render(w, r, "create.page.tmpl", nil)
 }
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
-	s, err := app.SnippetDB.Latest()
+	s, err := app.Snippets.Latest()
 	if err != nil {
 		app.ErrorLog.Printf("\n\tError: %s", err)
 		app.serverError(w, err)
@@ -91,15 +93,15 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
 	if err != nil || id < 1 {
 		app.ErrorLog.Printf("\n\tError: %s", err)
-		app.notFound(w)
+		app.notFound(w, r)
 		return
 	}
 
-	snippetContents, err := app.SnippetDB.Get(id)
+	snippetContents, err := app.Snippets.Get(id)
 	switch {
 	case err == models.ErrNoRecord:
 		app.ErrorLog.Printf("\n\tError: %s", err)
-		app.notFound(w)
+		app.notFound(w, r)
 		return
 	case err != nil:
 		app.ErrorLog.Printf("\n\tError: %s", err)
@@ -114,26 +116,25 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
-	switch {
-	case app.Snippet == nil:
-		app.ErrorLog.Println("Sql Record is not defined")
+	err := r.ParseForm()
+	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
-	case app.SnippetDB == nil:
-		app.ErrorLog.Println("Snippet Database is not defined")
-		app.clientError(w, http.StatusBadRequest)
-		return
-
 	}
 
-	id, err := app.SnippetDB.Insert(
-		app.Snippet.Title,
-		app.Snippet.Content,
-		app.Snippet.Expires)
+	// Use the r.PostForm.Get() method to retrieve the relevant data fields
+	// from the r.PostForm map.
+	title := r.PostForm.Get("title")
+	content := r.PostForm.Get("content")
+	expires := r.PostForm.Get("expires")
+
+	// Create a new snippet record in the database using the form data.
+	id, err := app.Snippets.Insert(title, content, expires)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
+
 	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 }
 
@@ -147,6 +148,8 @@ func (app *Application) clientError(w http.ResponseWriter, status int) {
 	http.Error(w, http.StatusText(status), status)
 }
 
-func (app *Application) notFound(w http.ResponseWriter) {
+// NOTE: r *http.Request is ignored by this function.
+// It's only used so that I can attach this to the routes
+func (app *Application) notFound(w http.ResponseWriter, r *http.Request) {
 	app.clientError(w, http.StatusNotFound)
 }
