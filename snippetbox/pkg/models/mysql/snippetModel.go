@@ -108,14 +108,14 @@ func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 }
 
 // This function takes the title, content and the time it expires
-func (m *SnippetDatabase) Insert(title, content, daysToExpire string) (int, error) {
+func (m *SnippetDatabase) Insert(title, content, numOfDaysToExpire string) (int, error) {
 	if m.LatestStatement == nil {
 		m.errorLog.Fatalf("\n\t---- Call NewSnippetModel() first----")
 	}
 
 	errorValue := -1
 	// Convert expires to a string representing the number of days
-	result, err := m.InsertStatement.ExecContext(m.ctx, title, content, daysToExpire)
+	result, err := m.InsertStatement.ExecContext(m.ctx, title, content, numOfDaysToExpire)
 	if err != nil {
 		m.errorLog.Printf("\n\tError: %s", err)
 		m.tx.Rollback()

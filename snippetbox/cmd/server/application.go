@@ -63,6 +63,10 @@ func (app *Application) createRoutes() (http.Handler, error) {
 
 	fileServer := http.FileServer(http.Dir(StaticFolder))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
+
+	// Adding a catch-all route, and say error 404
+	mux.Get("/{.*}", http.HandlerFunc(app.notFound))
+
 	return standardMiddleware.Then(mux), nil
 }
 
@@ -89,7 +93,7 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
 	if err != nil || id < 1 {
 		app.ErrorLog.Printf("\n\tError: %s", err)
-		app.notFound(w)
+		app.notFound(w, r)
 		return
 	}
 
@@ -97,7 +101,7 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case err == models.ErrNoRecord:
 		app.ErrorLog.Printf("\n\tError: %s", err)
-		app.notFound(w)
+		app.notFound(w, r)
 		return
 	case err != nil:
 		app.ErrorLog.Printf("\n\tError: %s", err)
@@ -144,6 +148,8 @@ func (app *Application) clientError(w http.ResponseWriter, status int) {
 	http.Error(w, http.StatusText(status), status)
 }
 
-func (app *Application) notFound(w http.ResponseWriter) {
+// NOTE: r *http.Request is ignored by this function.
+// It's only used so that I can attach this to the routes
+func (app *Application) notFound(w http.ResponseWriter, r *http.Request) {
 	app.clientError(w, http.StatusNotFound)
 }

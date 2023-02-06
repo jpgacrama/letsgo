@@ -269,13 +269,37 @@ func TestCreateSnippet(t *testing.T) {
 			log.Fatalf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "snippet/create")
+		request.PostForm = map[string][]string{
+			"title":   {"Title"},
+			"content": {"Content"},
+			"expires": {"1"},
+		}
+
 		response := httptest.NewRecorder()
 
 		// Adding ExpectPrepare to DB Expectations
 		sampleDatabaseContent.ID = 1
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+		rows.AddRow(0, "Title", "Content", "2024-01-23T10:23:42Z", "2024-01-24T10:23:42Z")
+		prep.ExpectExec().WithArgs(
+			sampleDatabaseContent.Title,
+			sampleDatabaseContent.Content,
+			"1",
+		).WillReturnResult(sqlmock.NewResult(0, 1))
+
+		server.Handler.ServeHTTP(response, request)
+
+		// It now redirects to another page. I should continue reading the book for more info.
+		assertStatus(t, response, http.StatusSeeOther)
+	})
+	// We are now showing the form which allows the user to enter data to be POST-ed
+	t.Run("checking create snippet OK Case - GET instead of POST", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodGet, "snippet/create")
+		response := httptest.NewRecorder()
 
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
@@ -297,25 +321,6 @@ func TestCreateSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
 	})
-	// We are attempting to pass the record to the Database, but it does not exist yet.
-	t.Run("checking create snippet NOK Case - POST instead of GET", func(t *testing.T) {
-		server, err := server.CreateServer(app)
-		if err != nil {
-			log.Fatalf("problem creating server %v", err)
-		}
-		request := newRequest(http.MethodPost, "snippet/create")
-		response := httptest.NewRecorder()
-
-		// Adding ExpectPrepare to DB Expectations
-		sampleDatabaseContent.ID = 1
-		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID)
-
-		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusBadRequest)
-	})
-
 }
 
 func newRequest(requestType, str string) *http.Request {
