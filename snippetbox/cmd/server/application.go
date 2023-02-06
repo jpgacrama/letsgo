@@ -13,6 +13,9 @@ import (
 	"github.com/justinas/alice"
 
 	"github.com/bmizerany/pat"
+
+	"strings"
+	"unicode/utf8"
 )
 
 var StaticFolder = "./ui/static"
@@ -122,13 +125,18 @@ func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use the r.PostForm.Get() method to retrieve the relevant data fields
-	// from the r.PostForm map.
 	title := r.PostForm.Get("title")
 	content := r.PostForm.Get("content")
 	expires := r.PostForm.Get("expires")
 
-	// Create a new snippet record in the database using the form data.
+	errors := validateSnippets(title, content, expires)
+
+	if len(errors) > 0 {
+		app.ErrorLog.Printf("\n\tError: %s", err)
+		fmt.Fprint(w, errors)
+		return
+	}
+
 	id, err := app.Snippets.Insert(title, content, expires)
 	if err != nil {
 		app.serverError(w, err)
@@ -136,6 +144,27 @@ func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
+}
+
+func validateSnippets(title, content, expires string) map[string]string {
+	errors := make(map[string]string)
+
+	if strings.TrimSpace(title) == "" {
+		errors["title"] = "This field cannot be blank"
+	} else if utf8.RuneCountInString(title) > 100 {
+		errors["title"] = "This field is too long (maximum is 100 characters)"
+	}
+
+	if strings.TrimSpace(content) == "" {
+		errors["content"] = "This field cannot be blank"
+	}
+
+	if strings.TrimSpace(expires) == "" {
+		errors["expires"] = "This field cannot be blank"
+	} else if expires != "365" && expires != "7" && expires != "1" {
+		errors["expires"] = "This field is invalid"
+	}
+	return errors
 }
 
 func (app *Application) serverError(w http.ResponseWriter, err error) {
