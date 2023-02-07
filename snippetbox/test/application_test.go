@@ -415,6 +415,31 @@ func TestCreateSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusBadRequest)
 	})
+
+	t.Run("checking create snippet NOK Case - Expires is blank", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodPost, "snippet/create")
+		blankExpires := ""
+		request.PostForm = map[string][]string{
+			"title":   {"Title"},
+			"content": {"Content"},
+			"expires": {blankExpires},
+		}
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		prep.ExpectExec().WithArgs(
+			"Title",
+			"Content",
+			blankExpires,
+		).WillReturnResult(sqlmock.NewResult(0, 0))
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusBadRequest)
+	})
 }
 
 func newRequest(requestType, str string) *http.Request {
