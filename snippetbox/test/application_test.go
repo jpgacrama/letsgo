@@ -440,6 +440,31 @@ func TestCreateSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusBadRequest)
 	})
+	// NOK Case where Expires is not any of these values: 365, 7 , or 1
+	t.Run("checking create snippet NOK Case - Expires value is invalid", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodPost, "snippet/create")
+		wrongExpiresValue := "25"
+		request.PostForm = map[string][]string{
+			"title":   {"Title"},
+			"content": {"Content"},
+			"expires": {wrongExpiresValue},
+		}
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		prep.ExpectExec().WithArgs(
+			"Title",
+			"Content",
+			wrongExpiresValue,
+		).WillReturnResult(sqlmock.NewResult(0, 0))
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusBadRequest)
+	})
 }
 
 func newRequest(requestType, str string) *http.Request {
