@@ -273,8 +273,6 @@ func TestCreateSnippet(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		// Adding ExpectPrepare to DB Expectations
-		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", "2024-01-23T10:23:42Z", "2024-01-24T10:23:42Z")
 		prep.ExpectExec().WithArgs(
 			"Title",
 			"Content",
@@ -314,7 +312,7 @@ func TestCreateSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
 	})
-	t.Run("checking create snippet NOK Case - Title is blank", func(t *testing.T) {
+	t.Run("checking create snippet NOK Case - Title is too long", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
