@@ -131,12 +131,14 @@ func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
 
 	errors := validateSnippets(title, content, expires)
 
+	// If there are any validation errors, re-display the create.page.tmpl
+	// template passing in the validation errors and previously submitted
+	// r.PostForm data.
 	if len(errors) > 0 {
-		for i, err := range errors {
-			app.ErrorLog.Printf("\n\tError %s: %s", i, err)
-		}
-		app.clientError(w, http.StatusBadRequest)
-		fmt.Fprint(w, errors)
+		app.render(w, r, "create.page.tmpl", &templateData{
+			FormErrors: errors,
+			FormData:   r.PostForm,
+		})
 		return
 	}
 

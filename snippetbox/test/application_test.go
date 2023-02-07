@@ -365,7 +365,7 @@ func TestCreateSnippet(t *testing.T) {
 		).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusBadRequest)
+		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
 	})
 	t.Run("checking create snippet NOK Case - Title is blank", func(t *testing.T) {
 		server, err := server.CreateServer(app)
@@ -389,7 +389,7 @@ func TestCreateSnippet(t *testing.T) {
 		).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusBadRequest)
+		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
 	})
 	t.Run("checking create snippet NOK Case - Content is blank", func(t *testing.T) {
 		server, err := server.CreateServer(app)
@@ -413,7 +413,7 @@ func TestCreateSnippet(t *testing.T) {
 		).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusBadRequest)
+		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
 	})
 
 	t.Run("checking create snippet NOK Case - Expires is blank", func(t *testing.T) {
@@ -438,7 +438,7 @@ func TestCreateSnippet(t *testing.T) {
 		).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusBadRequest)
+		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
 	})
 	// NOK Case where Expires is not any of these values: 365, 7 , or 1
 	t.Run("checking create snippet NOK Case - Expires value is invalid", func(t *testing.T) {
@@ -463,7 +463,7 @@ func TestCreateSnippet(t *testing.T) {
 		).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusBadRequest)
+		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
 	})
 }
 
