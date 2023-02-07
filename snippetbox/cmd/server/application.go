@@ -132,7 +132,10 @@ func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	errors := validateSnippets(title, content, expires)
 
 	if len(errors) > 0 {
-		app.ErrorLog.Printf("\n\tError: %s", err)
+		for i, err := range errors {
+			app.ErrorLog.Printf("\n\tError %s: %s", i, err)
+		}
+		app.clientError(w, http.StatusBadRequest)
 		fmt.Fprint(w, errors)
 		return
 	}
