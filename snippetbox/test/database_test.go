@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"snippetbox/cmd/server"
-	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
 	"testing"
 	"time"
@@ -12,14 +11,6 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 )
-
-var created = time.Now()
-var sampleDatabaseContent = &models.Snippet{
-	ID:      1,
-	Title:   "Title",
-	Content: "Content",
-	Created: created,
-}
 
 func NewMock() (*sql.DB, sqlmock.Sqlmock) {
 	db, mock, err := sqlmock.New()
@@ -54,20 +45,20 @@ func TestInsert(t *testing.T) {
 	}
 	t.Run("Insert OK Case", func(t *testing.T) {
 		prep.ExpectExec().WithArgs(
-			sampleDatabaseContent.Title,
-			sampleDatabaseContent.Content,
+			"Title",
+			"Content",
 			"1").WillReturnResult(sqlmock.NewResult(0, 1))
 
-		_, err := repo.Insert(sampleDatabaseContent.Title, sampleDatabaseContent.Content, "1")
+		_, err := repo.Insert("Title", "Content", "1")
 		assert.NoError(t, err)
 	})
 	t.Run("Insert NOK Case", func(t *testing.T) {
 		query := "INSERT INTO snippets \\(title, content, created, expires\\) VALUES\\(\\?, \\?, UTC_TIMESTAMP\\(\\), DATE_ADD\\(UTC_TIMESTAMP\\(\\), INTERVAL \\? DAY\\)\\)"
 		mock.ExpectQuery(query).WithArgs(
-			sampleDatabaseContent.Title,
-			sampleDatabaseContent.Content,
+			"Title",
+			"Content",
 			"1").WillReturnError(err)
-		_, err := repo.Insert(sampleDatabaseContent.Title, sampleDatabaseContent.Content, "1")
+		_, err := repo.Insert("Title", "Content", "1")
 		assert.Error(t, err)
 	})
 }
@@ -99,9 +90,9 @@ func TestGet(t *testing.T) {
 	t.Run("Get() OK Case", func(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+		prep.ExpectQuery().WithArgs(0).WillReturnRows(rows)
 
-		output, err := repo.Get(sampleDatabaseContent.ID)
+		output, err := repo.Get(0)
 		assert.NotNil(t, output)
 		assert.NoError(t, err)
 	})

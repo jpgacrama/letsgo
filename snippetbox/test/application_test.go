@@ -55,7 +55,6 @@ func TestHomePage(t *testing.T) {
 		}
 
 		// Adding ExpectPrepare to DB Expectations
-		sampleDatabaseContent.ID = 1
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 		prep.ExpectQuery().WillReturnRows(rows)
@@ -167,10 +166,9 @@ func TestShowSnippet(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		// Adding ExpectPrepare to DB Expectations
-		sampleDatabaseContent.ID = 1
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+		prep.ExpectQuery().WithArgs(1).WillReturnRows(rows)
 
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
@@ -184,11 +182,10 @@ func TestShowSnippet(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		// Adding ExpectPrepare to DB Expectations
-		sampleDatabaseContent.ID = 0
 		mock.ExpectBegin()
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+		prep.ExpectQuery().WithArgs(0).WillReturnRows(rows)
 
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
@@ -202,11 +199,10 @@ func TestShowSnippet(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		// Adding ExpectPrepare to DB Expectations
-		sampleDatabaseContent.ID = 0
 		mock.ExpectBegin()
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+		prep.ExpectQuery().WithArgs(0).WillReturnRows(rows)
 
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusMethodNotAllowed)
@@ -220,11 +216,10 @@ func TestShowSnippet(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		// Adding ExpectPrepare to DB Expectations
-		sampleDatabaseContent.ID = 0
 		mock.ExpectBegin()
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+		prep.ExpectQuery().WithArgs(0).WillReturnRows(rows)
 
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
@@ -278,12 +273,11 @@ func TestCreateSnippet(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		// Adding ExpectPrepare to DB Expectations
-		sampleDatabaseContent.ID = 1
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", "2024-01-23T10:23:42Z", "2024-01-24T10:23:42Z")
 		prep.ExpectExec().WithArgs(
-			sampleDatabaseContent.Title,
-			sampleDatabaseContent.Content,
+			"Title",
+			"Content",
 			"1",
 		).WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -313,10 +307,9 @@ func TestCreateSnippet(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		// Adding ExpectPrepare to DB Expectations
-		sampleDatabaseContent.ID = 1
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", "2024-01-23T10:23:42Z", "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WithArgs(sampleDatabaseContent.ID).WillReturnRows(rows)
+		prep.ExpectQuery().WithArgs(1).WillReturnRows(rows)
 
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
