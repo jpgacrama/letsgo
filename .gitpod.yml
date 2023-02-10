@@ -4,13 +4,14 @@ tasks:
     # runs during prebuild => https://www.gitpod.io/docs/configure/projects/prebuilds
     init:
       sudo apt-get update; sudo apt-get install mysql-server -y
-    command: 
-      cp ./snippetbox/my.cnf /etc/mysql 
+      
+  - name: Set-up SQL
+    command:
+      sudo cp ./snippetbox/my.cnf /etc/mysql 
       cd ./snippetbox
       sudo mysql
       source ./db/snippetbox.sql
       source ./db/newUser.sql
-      
 
 # List the ports to expose. Learn more: https://www.gitpod.io/docs/configure/workspaces/ports
 ports:
