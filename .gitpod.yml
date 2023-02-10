@@ -5,7 +5,10 @@ tasks:
     init: |
       sudo apt-get update
       sudo apt-get install mysql-server -y
-      
+      gp sync-done installation 
+
+  - name: MySQL
+    init: gp sync-await installation
     command: |
       cd ./snippetbox
       sudo cp my.cnf /etc/mysql 
