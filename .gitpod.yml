@@ -5,6 +5,7 @@ tasks:
     init: |
       sudo apt-get update
       sudo apt-get install mysql-server -y
+      sudo systemctl enable mysql
       gp sync-done installation 
 
   - name: MySQL
