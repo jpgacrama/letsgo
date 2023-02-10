@@ -10,9 +10,7 @@ tasks:
   - name: MySQL
     init: gp sync-await installation
     command: |
-      cd ./snippetbox;
-      sudo cp my.cnf /etc/mysql;
-      sudo mysql;
+      cd ./snippetbox; sudo cp my.cnf /etc/mysql; sudo mysql;
 
 # List the ports to expose. Learn more: https://www.gitpod.io/docs/configure/workspaces/ports
 ports:
