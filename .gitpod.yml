@@ -2,11 +2,11 @@
 tasks:
   - name: Install MySQL
     # runs during prebuild => https://www.gitpod.io/docs/configure/projects/prebuilds
-    init:
-      sudo apt-get update; sudo apt-get install mysql-server -y
+    init: |
+      sudo apt-get update
+      sudo apt-get install mysql-server -y
       
-  - name: Set-up SQL
-    command:
+    command: |
       sudo cp ./snippetbox/my.cnf /etc/mysql 
       cd ./snippetbox
       sudo mysql
