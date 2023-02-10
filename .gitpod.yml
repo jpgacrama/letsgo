@@ -7,8 +7,8 @@ tasks:
       sudo apt-get install mysql-server -y
       
     command: |
-      sudo cp ./snippetbox/my.cnf /etc/mysql 
       cd ./snippetbox
+      sudo cp my.cnf /etc/mysql 
       sudo mysql
       source ./db/snippetbox.sql
       source ./db/newUser.sql
