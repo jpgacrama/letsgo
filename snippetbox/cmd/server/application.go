@@ -61,17 +61,23 @@ func CreateServer(app *Application) (*http.Server, error) {
 
 func (app *Application) createRoutes() (http.Handler, error) {
 	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+	dynamicMiddleware := alice.New(app.Session.Enable)
 	mux := pat.New()
-	mux.Get("/", http.HandlerFunc(app.home))
-	mux.Get("/snippet/create", http.HandlerFunc(app.createSnippetForm))
-	mux.Post("/snippet/create", http.HandlerFunc(app.createSnippet))
-	mux.Get("/snippet/:id", http.HandlerFunc(app.showSnippet))
 
-	fileServer := http.FileServer(http.Dir(StaticFolder))
+	// Update these routes to use the new dynamic middleware chain followed
+	// by the appropriate handler function.
+	mux.Get("/", dynamicMiddleware.ThenFunc(app.home))
+	mux.Get("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippetForm))
+	mux.Post("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippet))
+	mux.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
+
+	// Leave the static files route unchanged.
+	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
 
-	// Adding a catch-all route
-	mux.Get("/{.*}", http.HandlerFunc(app.notFound))
+	// Adding a catch-all route, and say error 404
+	mux.Get("/{.*}", dynamicMiddleware.ThenFunc(app.notFound))
+
 	return standardMiddleware.Then(mux), nil
 }
 
