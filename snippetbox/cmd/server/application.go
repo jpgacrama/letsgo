@@ -72,7 +72,7 @@ func (app *Application) createRoutes() (http.Handler, error) {
 	mux.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
 
 	// Leave the static files route unchanged.
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
+	fileServer := http.FileServer(http.Dir(StaticFolder))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
 
 	// Adding a catch-all route, and say error 404

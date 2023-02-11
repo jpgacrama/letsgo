@@ -1,8 +1,10 @@
 package snippetbox_test
 
 import (
+	"flag"
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/golangcollege/sessions"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -41,12 +43,16 @@ func TestHomePage(t *testing.T) {
 		errorLog.Fatal(err)
 	}
 
+	session := sessions.New([]byte(*createSession()))
+	session.Lifetime = 12 * time.Hour
+
 	app := &server.Application{
 		Port:          &port,
 		InfoLog:       infoLog,
 		ErrorLog:      errorLog,
 		Snippets:      repo,
 		TemplateCache: templateCache,
+		Session:       session,
 	}
 	t.Run("checking home page OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
@@ -88,10 +94,14 @@ func TestHomePage(t *testing.T) {
 
 func TestStaticPage(t *testing.T) {
 	server.StaticFolder = "../ui/static"
+	session := sessions.New([]byte(*createSession()))
+	session.Lifetime = 12 * time.Hour
+
 	app := &server.Application{
 		Port:     &port,
 		InfoLog:  infoLog,
 		ErrorLog: errorLog,
+		Session:  session,
 	}
 	t.Run("checking static page OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
@@ -150,12 +160,16 @@ func TestShowSnippet(t *testing.T) {
 		errorLog.Fatal(err)
 	}
 
+	session := sessions.New([]byte(*createSession()))
+	session.Lifetime = 12 * time.Hour
+
 	app := &server.Application{
 		Port:          &port,
 		InfoLog:       infoLog,
 		ErrorLog:      errorLog,
 		Snippets:      repo,
 		TemplateCache: templateCache,
+		Session:       session,
 	}
 	t.Run("checking show snippet OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
@@ -251,12 +265,16 @@ func TestCreateSnippet(t *testing.T) {
 		errorLog.Fatal(err)
 	}
 
+	session := sessions.New([]byte(*createSession()))
+	session.Lifetime = 12 * time.Hour
+
 	app := &server.Application{
 		Port:          &port,
 		InfoLog:       infoLog,
 		ErrorLog:      errorLog,
 		Snippets:      repo,
 		TemplateCache: templateCache,
+		Session:       session,
 	}
 	t.Run("checking create snippet OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
@@ -532,4 +550,14 @@ func assertStatus(t testing.TB, response *httptest.ResponseRecorder, want int) {
 	if got != want {
 		t.Errorf("did not get correct status, got %d, want %d", got, want)
 	}
+}
+
+func createSession() *string {
+	// TODO: Change the secret string to your choice
+	secret := new(string)
+	if !flag.Parsed() {
+		secret = flag.String("secret", "s6Ndh+pPbnzHbS*+9Pk8qGWhTzbpa@ge", "Secret key")
+		flag.Parse()
+	}
+	return secret
 }
