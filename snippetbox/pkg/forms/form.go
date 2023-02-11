@@ -19,7 +19,7 @@ func New(data url.Values) *Form {
 	}
 }
 
-func (f *Form) CannotBeBlank(fields ...string) {
+func (f *Form) Required(fields ...string) {
 	for _, field := range fields {
 		value := f.Get(field)
 		if strings.TrimSpace(value) == "" {

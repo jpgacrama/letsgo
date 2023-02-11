@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"runtime/debug"
+	"snippetbox/pkg/forms"
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
 	"strconv"
@@ -74,7 +75,9 @@ func (app *Application) createRoutes() (http.Handler, error) {
 }
 
 func (app *Application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
-	app.render(w, r, "create.page.tmpl", nil)
+	app.render(w, r, "create.page.tmpl", &templateData{
+		Form: forms.New(nil),
+	})
 }
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
@@ -125,24 +128,17 @@ func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	title := r.PostForm.Get("title")
-	content := r.PostForm.Get("content")
-	expires := r.PostForm.Get("expires")
+	form := forms.New(r.PostForm)
+	form.Required("title", "content", "expires")
+	form.MaxLength("title", 100)
+	form.PermittedValues("expires", "365", "7", "1")
 
-	errors := validateSnippets(title, content, expires)
-
-	// If there are any validation errors, re-display the create.page.tmpl
-	// template passing in the validation errors and previously submitted
-	// r.PostForm data.
-	if len(errors) > 0 {
-		app.render(w, r, "create.page.tmpl", &templateData{
-			FormErrors: errors,
-			FormData:   r.PostForm,
-		})
+	if !form.Valid() {
+		app.render(w, r, "create.page.tmpl", &templateData{Form: form})
 		return
 	}
 
-	id, err := app.Snippets.Insert(title, content, expires)
+	id, err := app.Snippets.Insert(form.Get("title"), form.Get("content"), form.Get("expires"))
 	if err != nil {
 		app.serverError(w, err)
 		return

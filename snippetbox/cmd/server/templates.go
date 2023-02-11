@@ -4,18 +4,16 @@ import (
 	"html/template"
 	"log"
 	"path/filepath"
+	"snippetbox/pkg/forms"
 	"snippetbox/pkg/models"
 	"time"
-
-	"net/url"
 )
 
 type templateData struct {
 	CurrentYear int
 	Snippet     *models.Snippet
 	Snippets    []*models.Snippet
-	FormData    url.Values
-	FormErrors  map[string]string
+	Form        *forms.Form
 }
 
 // Creates and parses template files, then puts them to a cache.
