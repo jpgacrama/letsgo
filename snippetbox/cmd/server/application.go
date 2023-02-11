@@ -15,6 +15,7 @@ import (
 
 	"github.com/bmizerany/pat"
 
+	"github.com/golangcollege/sessions"
 	"strings"
 	"unicode/utf8"
 )
@@ -27,6 +28,7 @@ type Application struct {
 	ErrorLog      *log.Logger
 	Snippets      *mysql.SnippetDatabase
 	TemplateCache map[string]*template.Template
+	Session       *sessions.Session
 }
 
 var homePageTemplateFiles = []string{

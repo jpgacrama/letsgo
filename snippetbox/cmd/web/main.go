@@ -6,6 +6,9 @@ import (
 	"snippetbox/cmd/server"
 
 	_ "github.com/go-sql-driver/mysql"
+
+	"github.com/golangcollege/sessions"
+	"time"
 )
 
 func parseUserInputs() (*string, *string) {
@@ -27,8 +30,16 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
+func createSession() *string {
+	// TODO: Change the secret string to your choice
+	secret := flag.String("secret", "s6Ndh+pPbnzHbS*+9Pk8qGWhTzbpa@ge", "Secret key")
+	flag.Parse()
+	return secret
+}
+
 func main() {
 	port, dsn := parseUserInputs()
+	secret := createSession()
 	infoLog, errorLog := server.CreateLoggers()
 	db, err := openDB(*dsn)
 	if err != nil {
@@ -41,12 +52,16 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	session := sessions.New([]byte(*secret))
+	session.Lifetime = 12 * time.Hour
+
 	server, err := server.CreateServer(
 		&server.Application{
 			Port:          port,
 			InfoLog:       infoLog,
 			ErrorLog:      errorLog,
-			TemplateCache: templateCache})
+			TemplateCache: templateCache,
+			Session:       session})
 	if err == nil {
 		infoLog.Printf("Starting server on %s", *port)
 		errorLog.Fatal(server.ListenAndServe())
