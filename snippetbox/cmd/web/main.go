@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"flag"
 	"snippetbox/cmd/server"
+	"snippetbox/pkg/models/mysql"
 
 	_ "github.com/go-sql-driver/mysql"
 
-	"github.com/golangcollege/sessions"
 	"time"
+
+	"github.com/golangcollege/sessions"
 )
 
 type flags struct {
@@ -64,12 +66,17 @@ func main() {
 
 	session := sessions.New([]byte(*flags.secret))
 	session.Lifetime = 12 * time.Hour
+	snippets, err := mysql.NewSnippetModel(db, infoLog, errorLog)
+	if err != nil {
+		errorLog.Fatal(err)
+	}
 
 	server, err := server.CreateServer(
 		&server.Application{
 			Port:          flags.port,
 			InfoLog:       infoLog,
 			ErrorLog:      errorLog,
+			Snippets:      snippets,
 			TemplateCache: templateCache,
 			Session:       session})
 	if err == nil {
