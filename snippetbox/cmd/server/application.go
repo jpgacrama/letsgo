@@ -70,9 +70,8 @@ func (app *Application) createRoutes() (http.Handler, error) {
 	fileServer := http.FileServer(http.Dir(StaticFolder))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
 
-	// Adding a catch-all route, and say error 404
+	// Adding a catch-all route
 	mux.Get("/{.*}", http.HandlerFunc(app.notFound))
-
 	return standardMiddleware.Then(mux), nil
 }
 
