@@ -240,7 +240,7 @@ func TestShowSnippet(t *testing.T) {
 	})
 }
 
-func TestShowSnippetFail(t *testing.T) {
+func TestShowSnippetIDNotFound(t *testing.T) {
 	db, mock := NewMock()
 
 	// New mocks due to NewSnippetModel() factory

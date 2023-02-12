@@ -109,7 +109,7 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snippetContents, err := app.Snippets.Get(id)
+	snippet, err := app.Snippets.Get(id)
 	switch {
 	case err == models.ErrNoRecord:
 		app.ErrorLog.Printf("\n\tError: %s", err)
@@ -121,9 +121,10 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use the new render helper.
+	flash := app.Session.PopString(r, "flash")
 	app.render(w, r, "show.page.tmpl", &templateData{
-		Snippet: snippetContents,
+		Flash:   flash,
+		Snippet: snippet,
 	})
 }
 
@@ -149,7 +150,7 @@ func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-
+	app.Session.Put(r, "flash", "Snippet successfully created!")
 	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 }
 
