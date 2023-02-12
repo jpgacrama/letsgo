@@ -204,22 +204,6 @@ func TestShowSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
 	})
-	t.Run("checking show snippet NOK Case - no ID found", func(t *testing.T) {
-		server, err := server.CreateServer(app)
-		if err != nil {
-			log.Fatalf("problem creating server %v", err)
-		}
-		request := newRequest(http.MethodGet, "snippet/10")
-		response := httptest.NewRecorder()
-
-		// Adding ExpectPrepare to DB Expectations
-		rows := sqlmock.NewRows([]string{})
-		prep.ExpectQuery().WithArgs(10).WillReturnRows(rows)
-		prep.ExpectQuery().WithArgs().WillReturnRows(rows)
-
-		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusNotFound)
-	})
 	t.Run("checking show snippet NOK Case - POST instead of GET", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
@@ -250,6 +234,60 @@ func TestShowSnippet(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 		prep.ExpectQuery().WithArgs(0).WillReturnRows(rows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusNotFound)
+	})
+}
+
+func TestShowSnippetFail(t *testing.T) {
+	db, mock := NewMock()
+
+	// New mocks due to NewSnippetModel() factory
+	mock.ExpectBegin()
+	_ = mock.ExpectPrepare("SELECT ...") // SELECT for Latest Statement
+	_ = mock.ExpectPrepare("INSERT ...")
+	prep := mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
+
+	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
+	defer func() {
+		if err == nil {
+			repo.Close()
+		}
+	}()
+
+	if err != nil {
+		log.Fatalf("Creating NewSnippetModel failed")
+		return
+	}
+	templateCache, err := server.NewTemplateCache("../ui/html/")
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
+	session := sessions.New([]byte(*createSession()))
+	session.Lifetime = 12 * time.Hour
+
+	app := &server.Application{
+		Port:          &port,
+		InfoLog:       infoLog,
+		ErrorLog:      errorLog,
+		Snippets:      repo,
+		TemplateCache: templateCache,
+		Session:       session,
+	}
+	t.Run("checking show snippet NOK Case - no ID found", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodGet, "snippet/10")
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		rows := sqlmock.NewRows([]string{})
+		prep.ExpectQuery().WithArgs(10).WillReturnRows(rows)
+		prep.ExpectQuery().WithArgs().WillReturnRows(rows)
 
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
