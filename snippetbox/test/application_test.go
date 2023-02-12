@@ -187,7 +187,7 @@ func TestShowSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
 	})
-	t.Run("checking show snippet NOK Case", func(t *testing.T) {
+	t.Run("checking show snippet NOK Case - malformed URL", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
 			log.Fatalf("problem creating server %v", err)
@@ -200,6 +200,22 @@ func TestShowSnippet(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 		prep.ExpectQuery().WithArgs(0).WillReturnRows(rows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusNotFound)
+	})
+	t.Run("checking show snippet NOK Case - no ID found", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodGet, "snippet/10")
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		rows := sqlmock.NewRows([]string{})
+		prep.ExpectQuery().WithArgs(10).WillReturnRows(rows)
+		prep.ExpectQuery().WithArgs().WillReturnRows(rows)
 
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)

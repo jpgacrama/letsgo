@@ -70,13 +70,11 @@ func (app *Application) createRoutes() (http.Handler, error) {
 	mux.Get("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippetForm))
 	mux.Post("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippet))
 	mux.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
+	mux.Get("/{.*}", dynamicMiddleware.ThenFunc(app.notFound))
 
 	// Leave the static files route unchanged.
 	fileServer := http.FileServer(http.Dir(StaticFolder))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
-
-	// Adding a catch-all route, and say error 404
-	mux.Get("/{.*}", dynamicMiddleware.ThenFunc(app.notFound))
 
 	return standardMiddleware.Then(mux), nil
 }
@@ -88,6 +86,7 @@ func (app *Application) createSnippetForm(w http.ResponseWriter, r *http.Request
 }
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
+	app.InfoLog.Printf("\n\t home() called")
 	s, err := app.Snippets.Latest()
 	if err != nil {
 		app.ErrorLog.Printf("\n\tError: %s", err)
@@ -188,5 +187,6 @@ func (app *Application) clientError(w http.ResponseWriter, status int) {
 // NOTE: r *http.Request is ignored by this function.
 // It's only used so that I can attach this to the routes
 func (app *Application) notFound(w http.ResponseWriter, r *http.Request) {
+	app.ErrorLog.Printf("%s not found", r.URL.Path)
 	app.clientError(w, http.StatusNotFound)
 }
