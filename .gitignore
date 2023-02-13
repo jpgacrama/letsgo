@@ -7,4 +7,4 @@ snippetbox/go.sum
 snippetbox/test/__debug_bin
 
 .DS_Store
-tls/
+*.pem
