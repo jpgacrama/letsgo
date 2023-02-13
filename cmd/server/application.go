@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/tls"
 	"fmt"
 	"html/template"
 	"log"
@@ -15,9 +16,10 @@ import (
 
 	"github.com/bmizerany/pat"
 
-	"github.com/golangcollege/sessions"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/golangcollege/sessions"
 )
 
 var StaticFolder = "./ui/static"
@@ -29,6 +31,7 @@ type Application struct {
 	Snippets      *mysql.SnippetDatabase
 	TemplateCache map[string]*template.Template
 	Session       *sessions.Session
+	TLSConfig     *tls.Config
 }
 
 var homePageTemplateFiles = []string{
@@ -52,9 +55,10 @@ func CreateServer(app *Application) (*http.Server, error) {
 	}
 
 	srv := &http.Server{
-		Addr:     *app.Port,
-		ErrorLog: app.ErrorLog,
-		Handler:  routes,
+		Addr:      *app.Port,
+		ErrorLog:  app.ErrorLog,
+		Handler:   routes,
+		TLSConfig: app.TLSConfig,
 	}
 	return srv, nil
 }

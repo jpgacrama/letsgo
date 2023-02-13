@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/golangcollege/sessions"
+
+	"crypto/tls"
 )
 
 type flags struct {
@@ -50,6 +52,14 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
+// Function to set the TLS Settings
+func setTLSSettings() *tls.Config {
+	return &tls.Config{
+		PreferServerCipherSuites: true,
+		CurvePreferences:         []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+}
+
 func main() {
 	flags := parseUserInputs()
 	infoLog, errorLog := server.CreateLoggers()
@@ -71,6 +81,8 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	tlsConfig := setTLSSettings()
+
 	server, err := server.CreateServer(
 		&server.Application{
 			Port:          flags.port,
@@ -78,7 +90,8 @@ func main() {
 			ErrorLog:      errorLog,
 			Snippets:      snippets,
 			TemplateCache: templateCache,
-			Session:       session})
+			Session:       session,
+			TLSConfig:     tlsConfig})
 	if err == nil {
 		infoLog.Printf("Starting server on %s", *flags.port)
 		errorLog.Fatal(server.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem"))
