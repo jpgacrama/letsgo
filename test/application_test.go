@@ -605,6 +605,34 @@ func TestCreateSnippet(t *testing.T) {
 		// It now redirects to another page. I should continue reading the book for more info.
 		assertStatus(t, response, http.StatusInternalServerError)
 	})
+
+	t.Run("checking create snippet NOK Case - DB is closed so Insert Fails", func(t *testing.T) {
+		app.Snippets.Close() // Closing the database so Insert() fails
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		// I decided not to use newRequest() to trigger an error
+		request := newRequest(http.MethodPost, "snippet/create")
+		request.PostForm = map[string][]string{
+			"title":   {"Title"},
+			"content": {"Content"},
+			"expires": {"1"},
+		}
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		prep.ExpectExec().WithArgs(
+			"Title",
+			"Content",
+			"1",
+		).WillReturnResult(sqlmock.NewResult(0, 1))
+
+		server.Handler.ServeHTTP(response, request)
+
+		// It now redirects to another page. I should continue reading the book for more info.
+		assertStatus(t, response, http.StatusInternalServerError)
+	})
 }
 
 func TestCatchAll(t *testing.T) {
