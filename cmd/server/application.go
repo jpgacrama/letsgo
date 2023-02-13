@@ -1,11 +1,13 @@
 package server
 
 import (
+	"crypto/tls"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"runtime/debug"
+	"snippetbox/pkg/forms"
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
 	"strconv"
@@ -13,6 +15,12 @@ import (
 	"github.com/justinas/alice"
 
 	"github.com/bmizerany/pat"
+
+	"strings"
+	"unicode/utf8"
+
+	"github.com/golangcollege/sessions"
+	"time"
 )
 
 var StaticFolder = "./ui/static"
@@ -23,6 +31,8 @@ type Application struct {
 	ErrorLog      *log.Logger
 	Snippets      *mysql.SnippetDatabase
 	TemplateCache map[string]*template.Template
+	Session       *sessions.Session
+	TLSConfig     *tls.Config
 }
 
 var homePageTemplateFiles = []string{
@@ -46,35 +56,45 @@ func CreateServer(app *Application) (*http.Server, error) {
 	}
 
 	srv := &http.Server{
-		Addr:     *app.Port,
-		ErrorLog: app.ErrorLog,
-		Handler:  routes,
+		Addr:         *app.Port,
+		ErrorLog:     app.ErrorLog,
+		Handler:      routes,
+		TLSConfig:    app.TLSConfig,
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 	return srv, nil
 }
 
 func (app *Application) createRoutes() (http.Handler, error) {
 	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+	dynamicMiddleware := alice.New(app.Session.Enable)
 	mux := pat.New()
-	mux.Get("/", http.HandlerFunc(app.home))
-	mux.Get("/snippet/create", http.HandlerFunc(app.createSnippetForm))
-	mux.Post("/snippet/create", http.HandlerFunc(app.createSnippet))
-	mux.Get("/snippet/:id", http.HandlerFunc(app.showSnippet))
 
+	// Update these routes to use the new dynamic middleware chain followed
+	// by the appropriate handler function.
+	mux.Get("/", dynamicMiddleware.ThenFunc(app.home))
+	mux.Get("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippetForm))
+	mux.Post("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippet))
+	mux.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
+	mux.Get("/{.*}", dynamicMiddleware.ThenFunc(app.notFound))
+
+	// Leave the static files route unchanged.
 	fileServer := http.FileServer(http.Dir(StaticFolder))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
-
-	// Adding a catch-all route, and say error 404
-	mux.Get("/{.*}", http.HandlerFunc(app.notFound))
 
 	return standardMiddleware.Then(mux), nil
 }
 
 func (app *Application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
-	app.render(w, r, "create.page.tmpl", nil)
+	app.render(w, r, "create.page.tmpl", &templateData{
+		Form: forms.New(nil),
+	})
 }
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
+	app.InfoLog.Printf("\n\t home() called")
 	s, err := app.Snippets.Latest()
 	if err != nil {
 		app.ErrorLog.Printf("\n\tError: %s", err)
@@ -97,7 +117,7 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snippetContents, err := app.Snippets.Get(id)
+	snippet, err := app.Snippets.Get(id)
 	switch {
 	case err == models.ErrNoRecord:
 		app.ErrorLog.Printf("\n\tError: %s", err)
@@ -109,9 +129,8 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use the new render helper.
 	app.render(w, r, "show.page.tmpl", &templateData{
-		Snippet: snippetContents,
+		Snippet: snippet,
 	})
 }
 
@@ -122,20 +141,44 @@ func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use the r.PostForm.Get() method to retrieve the relevant data fields
-	// from the r.PostForm map.
-	title := r.PostForm.Get("title")
-	content := r.PostForm.Get("content")
-	expires := r.PostForm.Get("expires")
+	form := forms.New(r.PostForm)
+	form.Required("title", "content", "expires")
+	form.MaxLength("title", 100)
+	form.PermittedValues("expires", "365", "7", "1")
 
-	// Create a new snippet record in the database using the form data.
-	id, err := app.Snippets.Insert(title, content, expires)
+	if !form.Valid() {
+		app.render(w, r, "create.page.tmpl", &templateData{Form: form})
+		return
+	}
+
+	id, err := app.Snippets.Insert(form.Get("title"), form.Get("content"), form.Get("expires"))
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
-
+	app.Session.Put(r, "flash", "Snippet successfully created!")
 	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
+}
+
+func validateSnippets(title, content, expires string) map[string]string {
+	errors := make(map[string]string)
+
+	if strings.TrimSpace(title) == "" {
+		errors["title"] = "This field cannot be blank"
+	} else if utf8.RuneCountInString(title) > 100 {
+		errors["title"] = "This field is too long (maximum is 100 characters)"
+	}
+
+	if strings.TrimSpace(content) == "" {
+		errors["content"] = "This field cannot be blank"
+	}
+
+	if strings.TrimSpace(expires) == "" {
+		errors["expires"] = "This field cannot be blank"
+	} else if expires != "365" && expires != "7" && expires != "1" {
+		errors["expires"] = "This field is invalid"
+	}
+	return errors
 }
 
 func (app *Application) serverError(w http.ResponseWriter, err error) {
@@ -151,5 +194,6 @@ func (app *Application) clientError(w http.ResponseWriter, status int) {
 // NOTE: r *http.Request is ignored by this function.
 // It's only used so that I can attach this to the routes
 func (app *Application) notFound(w http.ResponseWriter, r *http.Request) {
+	app.ErrorLog.Printf("%s not found", r.URL.Path)
 	app.clientError(w, http.StatusNotFound)
 }

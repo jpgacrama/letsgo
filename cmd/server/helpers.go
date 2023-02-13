@@ -15,9 +15,6 @@ func CreateLoggers() (*log.Logger, *log.Logger) {
 	return infoLog, errorLog
 }
 
-// Retrieve the appropriate template set from the cache based on the page name
-// (like 'home.page.tmpl'). If no entry exists in the cache with the
-// provided name, call the serverError helper method that we made earlier.
 func (app *Application) render(w http.ResponseWriter, r *http.Request, name string, td *templateData) {
 	ts, ok := app.TemplateCache[name]
 	if !ok {
@@ -36,14 +33,11 @@ func (app *Application) render(w http.ResponseWriter, r *http.Request, name stri
 	buf.WriteTo(w)
 }
 
-// This takes a pointer to a templateData struct, adds the current year
-// to the CurrentYear field, and then returns the pointer.
-// Again, we're not using the *http.Request parameter at the
-// moment, but we will do later in the book.
 func (app *Application) addDefaultData(td *templateData, r *http.Request) *templateData {
 	if td == nil {
 		td = &templateData{}
 	}
 	td.CurrentYear = time.Now().Year()
+	td.Flash = app.Session.PopString(r, "flash")
 	return td
 }

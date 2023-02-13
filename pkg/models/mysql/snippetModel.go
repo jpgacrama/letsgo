@@ -68,6 +68,7 @@ func (m *SnippetDatabase) Close() {
 
 // NOTE: rows.Close() must be called by the calling function!
 func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
+	m.infoLog.Printf("\n\tLatest() called")
 	if m.LatestStatement == nil {
 		m.errorLog.Fatalf("\n\t---- Call NewSnippetModel() first----")
 	}
