@@ -103,7 +103,7 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
 	if err != nil || id < 1 {
 		app.ErrorLog.Printf("\n\tError: %s", err)
-		app.notFound(w, r)
+		app.badRequest(w, r)
 		return
 	}
 
@@ -165,4 +165,9 @@ func (app *Application) clientError(w http.ResponseWriter, status int) {
 func (app *Application) notFound(w http.ResponseWriter, r *http.Request) {
 	app.ErrorLog.Printf("%s not found", r.URL.Path)
 	app.clientError(w, http.StatusNotFound)
+}
+
+func (app *Application) badRequest(w http.ResponseWriter, r *http.Request) {
+	app.ErrorLog.Printf("Bad Request: %s", r.URL.Path)
+	app.clientError(w, http.StatusBadRequest)
 }
