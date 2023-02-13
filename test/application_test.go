@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/golangcollege/sessions"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -531,7 +532,6 @@ func TestCreateSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
 	})
-
 	t.Run("checking create snippet NOK Case - Expires is blank", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
@@ -580,6 +580,30 @@ func TestCreateSnippet(t *testing.T) {
 
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
+	})
+	t.Run("checking create snippet NOK Case - Parse Form fails", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		// I decided not to use newRequest() to trigger an error
+		request := httptest.NewRequest(
+			http.MethodPost, fmt.Sprintf("/%s", "snippet/create"), io.LimitReader(nil, 1<<20))
+		request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		prep.ExpectExec().WithArgs(
+			"Title",
+			"Content",
+			"1",
+		).WillReturnResult(sqlmock.NewResult(0, 1))
+
+		server.Handler.ServeHTTP(response, request)
+
+		// It now redirects to another page. I should continue reading the book for more info.
+		assertStatus(t, response, http.StatusInternalServerError)
 	})
 }
 
