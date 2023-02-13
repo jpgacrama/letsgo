@@ -1,8 +1,11 @@
 # SnippetBox using Let's Go
 - [SnippetBox using Let's Go](#snippetbox-using-lets-go)
-- [1. Introduction](#1-introduction)
-  - [1.1. Pre-requisites](#11-pre-requisites)
-  - [1.2 Running the program](#12-running-the-program)
+- [Introduction](#introduction)
+  - [Pre-requisites](#pre-requisites)
+  - [Running the program](#running-the-program)
+  - [Running Code Coverage](#running-code-coverage)
+  - [Appendix](#appendix)
+    - [Setting up a MySQL Server using GitPod](#setting-up-a-mysql-server-using-gitpod)
 
 # Introduction
 
@@ -18,6 +21,13 @@ Download the CSS and Javascript files by running this in your terminal `$ curl h
 3. See the contents of mysql using these commands
     - Start MySQL: `mysql -D snippetbox -u web -p `
     - Check its contents: `SELECT id, title, expires FROM snippets;`
+
+## Running Code Coverage
+Execute the following statements to generate a Code Coverage Report
+```
+go test -coverpkg=./... -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
+```
 
 ## Appendix
 
