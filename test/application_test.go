@@ -90,6 +90,17 @@ func TestHomePage(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusMethodNotAllowed)
 	})
+	t.Run("checking home page NOK Case - DB has no contents", func(t *testing.T) {
+		app.Snippets.Close() // Closing DB so that Internal Server error is triggered
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodGet, "")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusInternalServerError)
+	})
 }
 
 func TestStaticPage(t *testing.T) {
