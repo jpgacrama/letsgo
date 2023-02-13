@@ -20,6 +20,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/golangcollege/sessions"
+	"time"
 )
 
 var StaticFolder = "./ui/static"
@@ -55,10 +56,13 @@ func CreateServer(app *Application) (*http.Server, error) {
 	}
 
 	srv := &http.Server{
-		Addr:      *app.Port,
-		ErrorLog:  app.ErrorLog,
-		Handler:   routes,
-		TLSConfig: app.TLSConfig,
+		Addr:         *app.Port,
+		ErrorLog:     app.ErrorLog,
+		Handler:      routes,
+		TLSConfig:    app.TLSConfig,
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 	return srv, nil
 }
