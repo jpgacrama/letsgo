@@ -265,6 +265,23 @@ func TestShowSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusBadRequest)
 	})
+	t.Run("checking show snippet NOK Case - Database returns an Internal Server Error", func(t *testing.T) {
+		app.Snippets.Close() // Closing the DB Connection to mimic Internal Server Error
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodGet, "snippet/1")
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WithArgs(1).WillReturnRows(rows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusInternalServerError)
+	})
 }
 
 func TestShowSnippetIDNotFound(t *testing.T) {
