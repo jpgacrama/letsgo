@@ -44,13 +44,7 @@ var showSnippetTemplateFiles = []string{
 }
 
 func CreateServer(app *Application) (*http.Server, error) {
-	routes, err := app.createRoutes()
-	if err != nil {
-		msg := "creating routes failed"
-		app.ErrorLog.Println(msg)
-		return nil, fmt.Errorf(msg)
-	}
-
+	routes := app.createRoutes()
 	srv := &http.Server{
 		Addr:         *app.Port,
 		ErrorLog:     app.ErrorLog,
@@ -63,7 +57,7 @@ func CreateServer(app *Application) (*http.Server, error) {
 	return srv, nil
 }
 
-func (app *Application) createRoutes() (http.Handler, error) {
+func (app *Application) createRoutes() http.Handler {
 	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 	dynamicMiddleware := alice.New(app.Session.Enable)
 	mux := pat.New()
@@ -80,7 +74,7 @@ func (app *Application) createRoutes() (http.Handler, error) {
 	fileServer := http.FileServer(http.Dir(StaticFolder))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
 
-	return standardMiddleware.Then(mux), nil
+	return standardMiddleware.Then(mux)
 }
 
 func (app *Application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
