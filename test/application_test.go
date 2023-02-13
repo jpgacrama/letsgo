@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/golangcollege/sessions"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -89,6 +90,17 @@ func TestHomePage(t *testing.T) {
 		response := httptest.NewRecorder()
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusMethodNotAllowed)
+	})
+	t.Run("checking home page NOK Case - DB has no contents", func(t *testing.T) {
+		app.Snippets.Close() // Closing DB so that Internal Server error is triggered
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodGet, "")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusInternalServerError)
 	})
 }
 
@@ -237,6 +249,39 @@ func TestShowSnippet(t *testing.T) {
 
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
+	})
+	t.Run("checking show snippet NOK Case - ID is not a number", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodGet, "snippet/jonas")
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WithArgs(1).WillReturnRows(rows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusBadRequest)
+	})
+	t.Run("checking show snippet NOK Case - Database returns an Internal Server Error", func(t *testing.T) {
+		app.Snippets.Close() // Closing the DB Connection to mimic Internal Server Error
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		request := newRequest(http.MethodGet, "snippet/1")
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WithArgs(1).WillReturnRows(rows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusInternalServerError)
 	})
 }
 
@@ -487,7 +532,6 @@ func TestCreateSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
 	})
-
 	t.Run("checking create snippet NOK Case - Expires is blank", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
@@ -536,6 +580,58 @@ func TestCreateSnippet(t *testing.T) {
 
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
+	})
+	t.Run("checking create snippet NOK Case - Parse Form fails", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		// I decided not to use newRequest() to trigger an error
+		request := httptest.NewRequest(
+			http.MethodPost, fmt.Sprintf("/%s", "snippet/create"), io.LimitReader(nil, 1<<20))
+		request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		prep.ExpectExec().WithArgs(
+			"Title",
+			"Content",
+			"1",
+		).WillReturnResult(sqlmock.NewResult(0, 1))
+
+		server.Handler.ServeHTTP(response, request)
+
+		// It now redirects to another page. I should continue reading the book for more info.
+		assertStatus(t, response, http.StatusInternalServerError)
+	})
+
+	t.Run("checking create snippet NOK Case - DB is closed so Insert Fails", func(t *testing.T) {
+		app.Snippets.Close() // Closing the database so Insert() fails
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+		// I decided not to use newRequest() to trigger an error
+		request := newRequest(http.MethodPost, "snippet/create")
+		request.PostForm = map[string][]string{
+			"title":   {"Title"},
+			"content": {"Content"},
+			"expires": {"1"},
+		}
+		response := httptest.NewRecorder()
+
+		// Adding ExpectPrepare to DB Expectations
+		prep.ExpectExec().WithArgs(
+			"Title",
+			"Content",
+			"1",
+		).WillReturnResult(sqlmock.NewResult(0, 1))
+
+		server.Handler.ServeHTTP(response, request)
+
+		// It now redirects to another page. I should continue reading the book for more info.
+		assertStatus(t, response, http.StatusInternalServerError)
 	})
 }
 

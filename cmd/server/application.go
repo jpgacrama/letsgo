@@ -15,10 +15,6 @@ import (
 	"github.com/justinas/alice"
 
 	"github.com/bmizerany/pat"
-
-	"strings"
-	"unicode/utf8"
-
 	"github.com/golangcollege/sessions"
 	"time"
 )
@@ -48,13 +44,7 @@ var showSnippetTemplateFiles = []string{
 }
 
 func CreateServer(app *Application) (*http.Server, error) {
-	routes, err := app.createRoutes()
-	if err != nil {
-		msg := "creating routes failed"
-		app.ErrorLog.Println(msg)
-		return nil, fmt.Errorf(msg)
-	}
-
+	routes := app.createRoutes()
 	srv := &http.Server{
 		Addr:         *app.Port,
 		ErrorLog:     app.ErrorLog,
@@ -67,7 +57,7 @@ func CreateServer(app *Application) (*http.Server, error) {
 	return srv, nil
 }
 
-func (app *Application) createRoutes() (http.Handler, error) {
+func (app *Application) createRoutes() http.Handler {
 	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 	dynamicMiddleware := alice.New(app.Session.Enable)
 	mux := pat.New()
@@ -84,7 +74,7 @@ func (app *Application) createRoutes() (http.Handler, error) {
 	fileServer := http.FileServer(http.Dir(StaticFolder))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
 
-	return standardMiddleware.Then(mux), nil
+	return standardMiddleware.Then(mux)
 }
 
 func (app *Application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +103,7 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
 	if err != nil || id < 1 {
 		app.ErrorLog.Printf("\n\tError: %s", err)
-		app.notFound(w, r)
+		app.badRequest(w, r)
 		return
 	}
 
@@ -135,8 +125,7 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
+	if err := r.ParseForm(); err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
@@ -160,27 +149,6 @@ func (app *Application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 }
 
-func validateSnippets(title, content, expires string) map[string]string {
-	errors := make(map[string]string)
-
-	if strings.TrimSpace(title) == "" {
-		errors["title"] = "This field cannot be blank"
-	} else if utf8.RuneCountInString(title) > 100 {
-		errors["title"] = "This field is too long (maximum is 100 characters)"
-	}
-
-	if strings.TrimSpace(content) == "" {
-		errors["content"] = "This field cannot be blank"
-	}
-
-	if strings.TrimSpace(expires) == "" {
-		errors["expires"] = "This field cannot be blank"
-	} else if expires != "365" && expires != "7" && expires != "1" {
-		errors["expires"] = "This field is invalid"
-	}
-	return errors
-}
-
 func (app *Application) serverError(w http.ResponseWriter, err error) {
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
 	app.ErrorLog.Output(2, trace)
@@ -196,4 +164,9 @@ func (app *Application) clientError(w http.ResponseWriter, status int) {
 func (app *Application) notFound(w http.ResponseWriter, r *http.Request) {
 	app.ErrorLog.Printf("%s not found", r.URL.Path)
 	app.clientError(w, http.StatusNotFound)
+}
+
+func (app *Application) badRequest(w http.ResponseWriter, r *http.Request) {
+	app.ErrorLog.Printf("Bad Request: %s", r.URL.Path)
+	app.clientError(w, http.StatusBadRequest)
 }

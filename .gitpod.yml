@@ -6,7 +6,8 @@ tasks:
       sudo apt-get update
       sudo apt-get install mysql-server -y
       sudo service mysql start
-      gp sync-done installation 
+      go get -u golang.org/x/lint/golint
+      gp sync-done installation
 
   - name: MySQL
     init: gp sync-await installation

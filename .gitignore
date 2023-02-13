@@ -8,3 +8,7 @@ snippetbox/test/__debug_bin
 
 .DS_Store
 *.pem
+
+*.out
+
+*.sum
