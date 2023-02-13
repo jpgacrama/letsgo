@@ -81,6 +81,6 @@ func main() {
 			Session:       session})
 	if err == nil {
 		infoLog.Printf("Starting server on %s", *flags.port)
-		errorLog.Fatal(server.ListenAndServe())
+		errorLog.Fatal(server.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem"))
 	}
 }
