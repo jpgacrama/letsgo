@@ -761,7 +761,7 @@ func TestAuthentication(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
 	})
-	t.Run("NOK Case - Signup a new user but with no data provided", func(t *testing.T) {
+	t.Run("NOK Case - Signup a new user but with invalid email address", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
 			log.Printf("problem creating server %v", err)
@@ -782,7 +782,7 @@ func TestAuthentication(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
 	})
-	t.Run("NOK Case - Signup a new user but with invalid email address", func(t *testing.T) {
+	t.Run("NOK Case - Signup a new user but with a short password", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
 			log.Printf("problem creating server %v", err)
@@ -794,6 +794,11 @@ func TestAuthentication(t *testing.T) {
 		prep.ExpectQuery().WillReturnRows(rows)
 
 		request := newRequest(http.MethodPost, "user/signup")
+		request.PostForm = map[string][]string{
+			"name":     {"Name"},
+			"email":    {"name@email.com"},
+			"password": {"W3f4"},
+		}
 		response := httptest.NewRecorder()
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
