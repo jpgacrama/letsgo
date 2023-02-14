@@ -29,6 +29,7 @@ type Application struct {
 	TemplateCache map[string]*template.Template
 	Session       *sessions.Session
 	TLSConfig     *tls.Config
+	Users         *mysql.UserModel
 }
 
 var homePageTemplateFiles = []string{

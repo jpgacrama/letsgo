@@ -91,7 +91,8 @@ func main() {
 			Snippets:      snippets,
 			TemplateCache: templateCache,
 			Session:       session,
-			TLSConfig:     tlsConfig})
+			TLSConfig:     tlsConfig,
+			Users:         &mysql.UserModel{DB: db}})
 	if err == nil {
 		infoLog.Printf("Starting server on %s", *flags.port)
 		errorLog.Fatal(server.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem"))
