@@ -735,12 +735,33 @@ func TestAuthentication(t *testing.T) {
 		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 		prep.ExpectQuery().WillReturnRows(rows)
 
-		request := newRequest(http.MethodGet, "user/signup")
+		request := newRequest(http.MethodPost, "user/signup")
+		request.PostForm = map[string][]string{
+			"name":     {"Name"},
+			"email":    {"name@email.com"},
+			"password": {"W3f4^4TJ%4@S"},
+		}
 		response := httptest.NewRecorder()
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
 	})
-	t.Run("OK Case - Call function to create a new User", func(t *testing.T) {
+	t.Run("NOK Case - Signup a new user but no data provided", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		// Adding ExpectPrepare to DB Expectations
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WillReturnRows(rows)
+
+		request := newRequest(http.MethodPost, "user/signup")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+	t.Run("NOK Case - Signup a new user but with no data provided", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
 			log.Printf("problem creating server %v", err)
