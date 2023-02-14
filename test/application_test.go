@@ -689,6 +689,124 @@ func TestCatchAll(t *testing.T) {
 	})
 }
 
+func TestAuthentication(t *testing.T) {
+	db, mock := NewMock()
+	// New mocks due to NewSnippetModel() factory
+	mock.ExpectBegin()
+	_ = mock.ExpectPrepare("SELECT ...") // SELECT for Latest Statement
+	_ = mock.ExpectPrepare("INSERT ...")
+	prep := mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
+
+	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
+	defer func() {
+		if err == nil {
+			repo.Close()
+		}
+	}()
+
+	if err != nil {
+		log.Fatalf("Creating NewSnippetModel failed")
+		return
+	}
+	templateCache, err := server.NewTemplateCache("../ui/html/")
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
+	session := sessions.New([]byte(*createSession()))
+	session.Lifetime = 12 * time.Hour
+
+	app := &server.Application{
+		Port:          &port,
+		InfoLog:       infoLog,
+		ErrorLog:      errorLog,
+		Snippets:      repo,
+		TemplateCache: templateCache,
+		Session:       session,
+	}
+	t.Run("OK Case - Call signup User Form", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+
+		// Adding ExpectPrepare to DB Expectations
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WillReturnRows(rows)
+
+		request := newRequest(http.MethodGet, "user/signup")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+	t.Run("OK Case - Call function to create a new User", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+
+		// Adding ExpectPrepare to DB Expectations
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WillReturnRows(rows)
+
+		request := newRequest(http.MethodPost, "user/signup")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+	t.Run("OK Case - Call function to login an existing User", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+
+		// Adding ExpectPrepare to DB Expectations
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WillReturnRows(rows)
+
+		request := newRequest(http.MethodGet, "user/login")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+	t.Run("OK Case - Call function to authenticate an existing User", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+
+		// Adding ExpectPrepare to DB Expectations
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WillReturnRows(rows)
+
+		request := newRequest(http.MethodPost, "user/login")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+
+	t.Run("OK Case - Call function to logout an existing User", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Fatalf("problem creating server %v", err)
+		}
+
+		// Adding ExpectPrepare to DB Expectations
+		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
+		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
+		prep.ExpectQuery().WillReturnRows(rows)
+
+		request := newRequest(http.MethodPost, "user/logout")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+}
+
 func newRequest(requestType, str string) *http.Request {
 	req := httptest.NewRequest(requestType, fmt.Sprintf("/%s", str), nil)
 	return req
