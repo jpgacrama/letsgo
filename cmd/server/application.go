@@ -178,7 +178,9 @@ func (app *Application) badRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) signupUserForm(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Display the user signup form...")
+	app.render(w, r, "signup.page.tmpl", &templateData{
+		Form: forms.New(nil),
+	})
 }
 
 func (app *Application) signupUser(w http.ResponseWriter, r *http.Request) {
