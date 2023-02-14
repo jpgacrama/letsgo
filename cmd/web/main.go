@@ -65,7 +65,7 @@ func main() {
 	infoLog, errorLog := server.CreateLoggers()
 	db, err := openDB(*flags.dsn)
 	if err != nil {
-		errorLog.Fatalf("Error Opening DB Connection: %s", err)
+		errorLog.Printf("Error Opening DB Connection: %s", err)
 	}
 	defer db.Close()
 

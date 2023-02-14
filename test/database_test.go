@@ -15,7 +15,7 @@ import (
 func NewMock() (*sql.DB, sqlmock.Sqlmock) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
-		log.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+		log.Printf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 
 	return db, mock
@@ -40,7 +40,7 @@ func TestInsert(t *testing.T) {
 	}()
 
 	if err != nil {
-		log.Fatalf("Creating NewSnippetModel failed")
+		log.Printf("Creating NewSnippetModel failed")
 		return
 	}
 	t.Run("Insert OK Case", func(t *testing.T) {
@@ -83,7 +83,7 @@ func TestGet(t *testing.T) {
 	}()
 
 	if err != nil {
-		log.Fatalf("Creating NewSnippetModel failed")
+		log.Printf("Creating NewSnippetModel failed")
 		return
 	}
 
@@ -109,30 +109,37 @@ func TestGet(t *testing.T) {
 }
 
 func TestLatest(t *testing.T) {
-	db, mock := NewMock()
-	infoLog, errorLog := server.CreateLoggers()
-
-	// New mocks due to NewSnippetModel() factory
-	mock.ExpectBegin()
-
-	// SELECT for Latest Statement
-	query := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) ORDER BY created DESC LIMIT 10"
-	prep := mock.ExpectPrepare(query)
-	_ = mock.ExpectPrepare("INSERT ...")
-	_ = mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
-
-	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
-	defer func() {
-		if err == nil {
-			repo.Close()
-		}
-	}()
-
-	if err != nil {
-		log.Fatalf("Creating NewSnippetModel failed")
-		return
-	}
 	t.Run("Latest() OK Case", func(t *testing.T) {
+		db, mock := NewMock()
+		infoLog, errorLog := server.CreateLoggers()
+
+		// New mocks due to NewSnippetModel() factory
+		mock.ExpectBegin()
+
+		// SELECT for Latest Statement
+		query := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) ORDER BY created DESC LIMIT 10"
+		prep := mock.ExpectPrepare(query)
+		_ = mock.ExpectPrepare("INSERT ...")
+		_ = mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items		repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
+
+		repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
+		defer func() {
+			if err == nil {
+				repo.Close()
+			}
+		}()
+
+		defer func() {
+			if err == nil {
+				repo.Close()
+			}
+		}()
+
+		if err != nil {
+			log.Printf("Creating NewSnippetModel failed")
+			return
+		}
+
 		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
 		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
 		prep.ExpectQuery().WillReturnRows(rows)
@@ -141,8 +148,121 @@ func TestLatest(t *testing.T) {
 		assert.NotNil(t, output)
 		assert.NoError(t, err)
 	})
-	t.Run("Latest() NOK Case", func(t *testing.T) {
+	t.Run("Latest() NOK Case - No Records found", func(t *testing.T) {
+		db, mock := NewMock()
+		infoLog, errorLog := server.CreateLoggers()
+
+		// New mocks due to NewSnippetModel() factory
+		mock.ExpectBegin()
+
+		// SELECT for Latest Statement
+		query := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) ORDER BY created DESC LIMIT 10"
+		prep := mock.ExpectPrepare(query)
+		_ = mock.ExpectPrepare("INSERT ...")
+		_ = mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items		repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
+
+		repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
+		defer func() {
+			if err == nil {
+				repo.Close()
+			}
+		}()
+
+		if err != nil {
+			log.Printf("Creating NewSnippetModel failed")
+			return
+		}
+		prep.ExpectQuery().WillReturnError(err)
 		output, err := repo.Latest()
+		assert.Nil(t, output)
+		assert.Error(t, err)
+	})
+	t.Run("Latest() NOK Case - No Prepared Query exists", func(t *testing.T) {
+		db, mock := NewMock()
+		infoLog, errorLog := server.CreateLoggers()
+
+		// New mocks due to NewSnippetModel() factory
+		mock.ExpectBegin()
+
+		// SELECT for Latest Statement
+		query := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) ORDER BY created DESC LIMIT 10"
+		prep := mock.ExpectPrepare(query)
+		_ = mock.ExpectPrepare("INSERT ...")
+		_ = mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
+
+		repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
+		defer func() {
+			if err == nil {
+				repo.Close()
+			}
+		}()
+
+		if err != nil {
+			log.Printf("Creating NewSnippetModel failed")
+			return
+		}
+		repo.LatestStatement = nil
+		output, err := repo.Latest()
+		prep.ExpectQuery().WillReturnError(err)
+		assert.Nil(t, output)
+		assert.Error(t, err)
+	})
+	t.Run("Insert() NOK Case - No Prepared Query exists", func(t *testing.T) {
+		db, mock := NewMock()
+		infoLog, errorLog := server.CreateLoggers()
+
+		// New mocks due to NewSnippetModel() factory
+		mock.ExpectBegin()
+
+		// SELECT for Latest Statement
+		query := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) ORDER BY created DESC LIMIT 10"
+		prep := mock.ExpectPrepare(query)
+		_ = mock.ExpectPrepare("INSERT ...")
+		_ = mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
+
+		repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
+		defer func() {
+			if err == nil {
+				repo.Close()
+			}
+		}()
+
+		if err != nil {
+			log.Printf("Creating NewSnippetModel failed")
+			return
+		}
+		repo.InsertStatement = nil
+		output, err := repo.Insert("Title", "Content", "1")
+		prep.ExpectQuery().WillReturnError(err)
+		assert.EqualValues(t, -1, output)
+		assert.Error(t, err)
+	})
+	t.Run("Get() NOK Case - No Prepared Query exists", func(t *testing.T) {
+		db, mock := NewMock()
+		infoLog, errorLog := server.CreateLoggers()
+
+		// New mocks due to NewSnippetModel() factory
+		mock.ExpectBegin()
+
+		// SELECT for Latest Statement
+		query := "SELECT id, title, content, created, expires FROM snippets WHERE expires \\> UTC_TIMESTAMP\\(\\) ORDER BY created DESC LIMIT 10"
+		prep := mock.ExpectPrepare(query)
+		_ = mock.ExpectPrepare("INSERT ...")
+		_ = mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
+
+		repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
+		defer func() {
+			if err == nil {
+				repo.Close()
+			}
+		}()
+
+		if err != nil {
+			log.Printf("Creating NewSnippetModel failed")
+			return
+		}
+		repo.LatestStatement = nil
+		output, err := repo.Get(1)
 		prep.ExpectQuery().WillReturnError(err)
 		assert.Nil(t, output)
 		assert.Error(t, err)

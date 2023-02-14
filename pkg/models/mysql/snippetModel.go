@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 	"snippetbox/pkg/models"
 	"time"
@@ -70,7 +71,8 @@ func (m *SnippetDatabase) Close() {
 func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 	m.infoLog.Printf("\n\tLatest() called")
 	if m.LatestStatement == nil {
-		m.errorLog.Fatalf("\n\t---- Call NewSnippetModel() first----")
+		m.errorLog.Printf("\n\t---- Call NewSnippetModel() first----")
+		return nil, errors.New("latestStatement is nil")
 	}
 
 	rows, err := m.LatestStatement.QueryContext(m.ctx)
@@ -110,8 +112,9 @@ func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 
 // This function takes the title, content and the time it expires
 func (m *SnippetDatabase) Insert(title, content, numOfDaysToExpire string) (int, error) {
-	if m.LatestStatement == nil {
-		m.errorLog.Fatalf("\n\t---- Call NewSnippetModel() first----")
+	if m.InsertStatement == nil {
+		m.errorLog.Printf("\n\t---- Call NewSnippetModel() first----")
+		return -1, errors.New("there is no Insert Statement")
 	}
 
 	errorValue := -1
@@ -133,7 +136,8 @@ func (m *SnippetDatabase) Insert(title, content, numOfDaysToExpire string) (int,
 func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
 	if m.LatestStatement == nil {
 		// Assumes that even the loggers for SnippetModel were not set yet
-		m.errorLog.Fatalf("\n\t---- Call NewSnippetModel() first----")
+		m.errorLog.Printf("\n\t---- Call NewSnippetModel() first----")
+		return nil, errors.New("latestStatement does not exist")
 	}
 
 	s := &models.Snippet{}

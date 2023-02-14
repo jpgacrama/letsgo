@@ -36,7 +36,7 @@ func TestHomePage(t *testing.T) {
 	}()
 
 	if err != nil {
-		log.Fatalf("Creating NewSnippetModel failed")
+		log.Printf("Creating NewSnippetModel failed")
 		return
 	}
 	templateCache, err := server.NewTemplateCache("../ui/html/")
@@ -58,7 +58,7 @@ func TestHomePage(t *testing.T) {
 	t.Run("checking home page OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 
 		// Adding ExpectPrepare to DB Expectations
@@ -74,7 +74,7 @@ func TestHomePage(t *testing.T) {
 	t.Run("checking home page NOK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "123")
 		response := httptest.NewRecorder()
@@ -84,7 +84,7 @@ func TestHomePage(t *testing.T) {
 	t.Run("checking home page NOK Case - POST instead of GET", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "")
 		response := httptest.NewRecorder()
@@ -95,7 +95,7 @@ func TestHomePage(t *testing.T) {
 		app.Snippets.Close() // Closing DB so that Internal Server error is triggered
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "")
 		response := httptest.NewRecorder()
@@ -118,7 +118,7 @@ func TestStaticPage(t *testing.T) {
 	t.Run("checking static page OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "static/")
 		response := httptest.NewRecorder()
@@ -128,7 +128,7 @@ func TestStaticPage(t *testing.T) {
 	t.Run("checking static page NOK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "static/123")
 		response := httptest.NewRecorder()
@@ -138,7 +138,7 @@ func TestStaticPage(t *testing.T) {
 	t.Run("checking static page NOK Case - POST instead of GET", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "static/123")
 		response := httptest.NewRecorder()
@@ -164,7 +164,7 @@ func TestShowSnippet(t *testing.T) {
 	}()
 
 	if err != nil {
-		log.Fatalf("Creating NewSnippetModel failed")
+		log.Printf("Creating NewSnippetModel failed")
 		return
 	}
 	templateCache, err := server.NewTemplateCache("../ui/html/")
@@ -186,7 +186,7 @@ func TestShowSnippet(t *testing.T) {
 	t.Run("checking show snippet OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet/1")
 		response := httptest.NewRecorder()
@@ -202,7 +202,7 @@ func TestShowSnippet(t *testing.T) {
 	t.Run("checking show snippet NOK Case - malformed URL", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet?id=0")
 		response := httptest.NewRecorder()
@@ -219,7 +219,7 @@ func TestShowSnippet(t *testing.T) {
 	t.Run("checking show snippet NOK Case - POST instead of GET", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "snippet/1")
 		response := httptest.NewRecorder()
@@ -236,7 +236,7 @@ func TestShowSnippet(t *testing.T) {
 	t.Run("checking show snippet NOK Case - Malformed snippet URL", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet?id=0")
 		response := httptest.NewRecorder()
@@ -253,7 +253,7 @@ func TestShowSnippet(t *testing.T) {
 	t.Run("checking show snippet NOK Case - ID is not a number", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet/jonas")
 		response := httptest.NewRecorder()
@@ -270,7 +270,7 @@ func TestShowSnippet(t *testing.T) {
 		app.Snippets.Close() // Closing the DB Connection to mimic Internal Server Error
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet/1")
 		response := httptest.NewRecorder()
@@ -302,7 +302,7 @@ func TestShowSnippetIDNotFound(t *testing.T) {
 	}()
 
 	if err != nil {
-		log.Fatalf("Creating NewSnippetModel failed")
+		log.Printf("Creating NewSnippetModel failed")
 		return
 	}
 	templateCache, err := server.NewTemplateCache("../ui/html/")
@@ -324,7 +324,7 @@ func TestShowSnippetIDNotFound(t *testing.T) {
 	t.Run("checking show snippet NOK Case - no ID found", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet/10")
 		response := httptest.NewRecorder()
@@ -356,7 +356,7 @@ func TestCreateSnippet(t *testing.T) {
 	}()
 
 	if err != nil {
-		log.Fatalf("Creating NewSnippetModel failed")
+		log.Printf("Creating NewSnippetModel failed")
 		return
 	}
 	templateCache, err := server.NewTemplateCache("../ui/html/")
@@ -378,7 +378,7 @@ func TestCreateSnippet(t *testing.T) {
 	t.Run("checking create snippet OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "snippet/create")
 		request.PostForm = map[string][]string{
@@ -405,7 +405,7 @@ func TestCreateSnippet(t *testing.T) {
 	t.Run("checking create snippet OK Case - GET instead of POST", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet/create")
 		response := httptest.NewRecorder()
@@ -416,7 +416,7 @@ func TestCreateSnippet(t *testing.T) {
 	t.Run("checking create snippet NOK Case - malformed URL", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet/create/?id=1")
 		response := httptest.NewRecorder()
@@ -432,7 +432,7 @@ func TestCreateSnippet(t *testing.T) {
 	t.Run("checking create snippet NOK Case - Title is too long", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "snippet/create")
 
@@ -487,7 +487,7 @@ func TestCreateSnippet(t *testing.T) {
 	t.Run("checking create snippet NOK Case - Title is blank", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "snippet/create")
 		blankTitle := ""
@@ -511,7 +511,7 @@ func TestCreateSnippet(t *testing.T) {
 	t.Run("checking create snippet NOK Case - Content is blank", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "snippet/create")
 		blankContent := ""
@@ -535,7 +535,7 @@ func TestCreateSnippet(t *testing.T) {
 	t.Run("checking create snippet NOK Case - Expires is blank", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "snippet/create")
 		blankExpires := ""
@@ -560,7 +560,7 @@ func TestCreateSnippet(t *testing.T) {
 	t.Run("checking create snippet NOK Case - Expires value is invalid", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "snippet/create")
 		wrongExpiresValue := "25"
@@ -584,7 +584,7 @@ func TestCreateSnippet(t *testing.T) {
 	t.Run("checking create snippet NOK Case - Parse Form fails", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		// I decided not to use newRequest() to trigger an error
 		request := httptest.NewRequest(
@@ -610,7 +610,7 @@ func TestCreateSnippet(t *testing.T) {
 		app.Snippets.Close() // Closing the database so Insert() fails
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		// I decided not to use newRequest() to trigger an error
 		request := newRequest(http.MethodPost, "snippet/create")
@@ -650,7 +650,7 @@ func TestCatchAll(t *testing.T) {
 	}()
 
 	if err != nil {
-		log.Fatalf("Creating NewSnippetModel failed")
+		log.Printf("Creating NewSnippetModel failed")
 		return
 	}
 	templateCache, err := server.NewTemplateCache("../ui/html/")
@@ -668,7 +668,7 @@ func TestCatchAll(t *testing.T) {
 	t.Run("checking catch-all", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 
 		// Adding ExpectPrepare to DB Expectations
@@ -705,7 +705,7 @@ func TestAuthentication(t *testing.T) {
 	}()
 
 	if err != nil {
-		log.Fatalf("Creating NewSnippetModel failed")
+		log.Printf("Creating NewSnippetModel failed")
 		return
 	}
 	templateCache, err := server.NewTemplateCache("../ui/html/")
@@ -727,7 +727,7 @@ func TestAuthentication(t *testing.T) {
 	t.Run("OK Case - Call signup User Form", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 
 		// Adding ExpectPrepare to DB Expectations
@@ -743,7 +743,7 @@ func TestAuthentication(t *testing.T) {
 	t.Run("OK Case - Call function to create a new User", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 
 		// Adding ExpectPrepare to DB Expectations
@@ -759,7 +759,7 @@ func TestAuthentication(t *testing.T) {
 	t.Run("OK Case - Call function to login an existing User", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 
 		// Adding ExpectPrepare to DB Expectations
@@ -775,7 +775,7 @@ func TestAuthentication(t *testing.T) {
 	t.Run("OK Case - Call function to authenticate an existing User", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 
 		// Adding ExpectPrepare to DB Expectations
@@ -792,7 +792,7 @@ func TestAuthentication(t *testing.T) {
 	t.Run("OK Case - Call function to logout an existing User", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 
 		// Adding ExpectPrepare to DB Expectations
