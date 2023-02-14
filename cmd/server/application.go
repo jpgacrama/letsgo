@@ -62,15 +62,20 @@ func (app *Application) createRoutes() http.Handler {
 	dynamicMiddleware := alice.New(app.Session.Enable)
 	mux := pat.New()
 
-	// Update these routes to use the new dynamic middleware chain followed
-	// by the appropriate handler function.
 	mux.Get("/", dynamicMiddleware.ThenFunc(app.home))
 	mux.Get("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippetForm))
 	mux.Post("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippet))
 	mux.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
+	mux.Get("/snippet?id=1", dynamicMiddleware.ThenFunc(app.showSnippet))
 	mux.Get("/{.*}", dynamicMiddleware.ThenFunc(app.notFound))
 
-	// Leave the static files route unchanged.
+	// New routes for signing-in and out, and authentication
+	mux.Get("/user/signup", dynamicMiddleware.ThenFunc(app.signupUserForm))
+	mux.Post("/user/signup", dynamicMiddleware.ThenFunc(app.signupUser))
+	mux.Get("/user/login", dynamicMiddleware.ThenFunc(app.loginUserForm))
+	mux.Post("/user/login", dynamicMiddleware.ThenFunc(app.loginUser))
+	mux.Post("/user/logout", dynamicMiddleware.ThenFunc(app.logoutUser))
+
 	fileServer := http.FileServer(http.Dir(StaticFolder))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
 
@@ -169,4 +174,24 @@ func (app *Application) notFound(w http.ResponseWriter, r *http.Request) {
 func (app *Application) badRequest(w http.ResponseWriter, r *http.Request) {
 	app.ErrorLog.Printf("Bad Request: %s", r.URL.Path)
 	app.clientError(w, http.StatusBadRequest)
+}
+
+func (app *Application) signupUserForm(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Display the user signup form...")
+}
+
+func (app *Application) signupUser(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Create a new user...")
+}
+
+func (app *Application) loginUserForm(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Display the user login form...")
+}
+
+func (app *Application) loginUser(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Authenticate and login the user...")
+}
+
+func (app *Application) logoutUser(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Logout the user...")
 }
