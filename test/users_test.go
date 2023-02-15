@@ -18,6 +18,20 @@ func TestUsers(t *testing.T) {
 		err := userModel.Insert("Name", "Email", "Password")
 		assert.NoError(t, err)
 	})
+	t.Run("UserModel OK Case - Valid Credentials", func(t *testing.T) {
+		password := "password123"
+		rows := sqlmock.NewRows([]string{"id", "hashed_password"})
+		rows.AddRow(
+			1,
+			password)
+
+		mock.ExpectQuery(
+			"SELECT id, hashed_password FROM users WHERE email \\= \\?").WithArgs(
+			"Email").WillReturnRows(rows)
+		authStatus, err := userModel.Authenticate("Email", password)
+		assert.Error(t, err)
+		assert.Equal(t, 0, authStatus)
+	})
 	t.Run("UserModel NOK Case - Invalid Credentials", func(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "hashed_password"})
 		rows.AddRow(
