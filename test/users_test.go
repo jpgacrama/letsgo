@@ -19,7 +19,7 @@ func TestUsers(t *testing.T) {
 		err := userModel.Insert("Name", "Email", "Password")
 		assert.NoError(t, err)
 	})
-	t.Run("UserModel OK Case - Valid Credentials", func(t *testing.T) {
+	t.Run("UserModel NOK Case - Password is too short", func(t *testing.T) {
 		password := "password123"
 		rows := sqlmock.NewRows([]string{"id", "hashed_password"})
 		rows.AddRow(
