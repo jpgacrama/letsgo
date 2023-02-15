@@ -1,6 +1,7 @@
 package snippetbox_test
 
 import (
+	"database/sql"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"snippetbox/pkg/models/mysql"
@@ -32,7 +33,33 @@ func TestUsers(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, 0, authStatus)
 	})
-	t.Run("UserModel NOK Case - Invalid Credentials", func(t *testing.T) {
+	t.Run("UserModel NOK Case - Special Error when looking for email", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "hashed_password"})
+		rows.AddRow(
+			1,
+			"Password")
+
+		mock.ExpectQuery(
+			"SELECT id, hashed_password FROM users WHERE email \\= \\?").WithArgs(
+			"NoEmail").WillReturnRows(rows)
+		authStatus, err := userModel.Authenticate("Email", "Password")
+		assert.Error(t, err)
+		assert.Equal(t, 0, authStatus)
+	})
+	t.Run("UserModel NOK Case - No email found", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "hashed_password"})
+		rows.AddRow(
+			1,
+			"Password")
+
+		mock.ExpectQuery(
+			"SELECT id, hashed_password FROM users WHERE email \\= \\?").WithArgs(
+			"NoEmail").WillReturnError(sql.ErrNoRows)
+		authStatus, err := userModel.Authenticate("NoEmail", "Password")
+		assert.Error(t, err)
+		assert.Equal(t, 0, authStatus)
+	})
+	t.Run("UserModel NOK Case - Invalid Password", func(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "hashed_password"})
 		rows.AddRow(
 			1,
