@@ -1,15 +1,19 @@
 package snippetbox_test
 
 import (
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"snippetbox/pkg/models/mysql"
 	"testing"
 )
 
 func TestUsers(t *testing.T) {
-	db, _ := NewMock()
+	db, mock := NewMock()
 	userModel := &mysql.UserModel{DB: db}
 	t.Run("UserModel OK Case - Testing Insert", func(t *testing.T) {
+		mock.ExpectExec("INSERT INTO users ...").WithArgs(
+			"Name", "Email", sqlmock.AnyArg(),
+		).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		err := userModel.Insert("Name", "Email", "Password")
 		assert.NoError(t, err)
