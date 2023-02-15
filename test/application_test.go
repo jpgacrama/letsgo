@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
+	sqldriver "github.com/go-sql-driver/mysql"
 	"github.com/golangcollege/sessions"
 	"io"
 	"log"
@@ -767,11 +768,14 @@ func TestAuthentication(t *testing.T) {
 			request.PostForm.Get("name"),
 			request.PostForm.Get("email"),
 			sqlmock.AnyArg(),
-		).WillReturnResult(sqlmock.NewResult(1, 1))
+		).WillReturnError(&sqldriver.MySQLError{
+			Number:  1062,
+			Message: "Duplicate entry 'name@email.com' for key 'users_uc_email'",
+		})
 
 		response := httptest.NewRecorder()
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusSeeOther)
+		assertStatus(t, response, http.StatusOK)
 	})
 	t.Run("NOK Case - Signup a new user but no data provided", func(t *testing.T) {
 		server, err := server.CreateServer(app)
