@@ -694,11 +694,10 @@ func TestCatchAll(t *testing.T) {
 
 func TestAuthentication(t *testing.T) {
 	db, mock := NewMock()
-	// New mocks due to NewSnippetModel() factory
 	mock.ExpectBegin()
 	_ = mock.ExpectPrepare("SELECT ...") // SELECT for Latest Statement
 	_ = mock.ExpectPrepare("INSERT ...")
-	prep := mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
+	_ = mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
 
 	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
@@ -870,15 +869,10 @@ func TestAuthentication(t *testing.T) {
 			log.Printf("problem creating server %v", err)
 		}
 
-		// Adding ExpectPrepare to DB Expectations
-		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WillReturnRows(rows)
-
 		request := newRequest(http.MethodPost, "user/logout")
 		response := httptest.NewRecorder()
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusOK)
+		assertStatus(t, response, http.StatusSeeOther)
 	})
 }
 
