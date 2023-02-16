@@ -1,6 +1,7 @@
 package snippetbox_test
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
@@ -862,7 +863,50 @@ func TestAuthentication(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusSeeOther)
 	})
+	t.Run("NOK Case - Authenticate an existing user failed", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
 
+		password := "C0mpl3xPass!"
+		request := newRequest(http.MethodPost, "user/login")
+		request.PostForm = map[string][]string{
+			"name":     {"Jonas"},
+			"email":    {"jonas@email.com"},
+			"password": {password},
+		}
+		response := httptest.NewRecorder()
+
+		mock.ExpectQuery(
+			"SELECT id, hashed_password FROM users WHERE email \\= \\?").WithArgs(
+			request.PostForm.Get("email")).WillReturnError(sql.ErrNoRows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+	t.Run("NOK Case - Authenticate an existing user failed with Special Error", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		password := "C0mpl3xPass!"
+		request := newRequest(http.MethodPost, "user/login")
+		request.PostForm = map[string][]string{
+			"name":     {"Jonas"},
+			"email":    {"jonas@email.com"},
+			"password": {password},
+		}
+		response := httptest.NewRecorder()
+
+		mock.ExpectQuery(
+			"SELECT id, hashed_password FROM users WHERE email \\= \\?").WithArgs(
+			request.PostForm.Get("email")).WillReturnError(sql.ErrTxDone)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusInternalServerError)
+	})
 	t.Run("OK Case - Call function to logout an existing User", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {

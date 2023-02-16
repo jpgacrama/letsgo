@@ -67,11 +67,6 @@ func TestUsers(t *testing.T) {
 		assert.Equal(t, 0, authStatus)
 	})
 	t.Run("Authenticate NOK Case - No email found", func(t *testing.T) {
-		rows := sqlmock.NewRows([]string{"id", "hashed_password"})
-		rows.AddRow(
-			1,
-			"Password")
-
 		mock.ExpectQuery(
 			"SELECT id, hashed_password FROM users WHERE email \\= \\?").WithArgs(
 			"NoEmail").WillReturnError(sql.ErrNoRows)
