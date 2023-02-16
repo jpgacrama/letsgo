@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 )
 
 func CreateLoggers() (*log.Logger, *log.Logger) {
@@ -25,19 +24,10 @@ func (app *Application) render(w http.ResponseWriter, r *http.Request, name stri
 	buf := new(bytes.Buffer)
 	err := ts.Execute(buf, app.addDefaultData(td, r))
 	if err != nil {
-		app.ErrorLog.Printf("\n\t---Error: %s ---", err)
+		app.ErrorLog.Printf("---Error: %s ---", err)
 		app.serverError(w, err)
 		return
 	}
 
 	buf.WriteTo(w)
-}
-
-func (app *Application) addDefaultData(td *templateData, r *http.Request) *templateData {
-	if td == nil {
-		td = &templateData{}
-	}
-	td.CurrentYear = time.Now().Year()
-	td.Flash = app.Session.PopString(r, "flash")
-	return td
 }

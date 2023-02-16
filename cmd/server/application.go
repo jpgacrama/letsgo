@@ -88,10 +88,10 @@ func (app *Application) createSnippetForm(w http.ResponseWriter, r *http.Request
 }
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
-	app.InfoLog.Printf("\n\t home() called")
+	app.InfoLog.Printf("home() called")
 	s, err := app.Snippets.Latest()
 	if err != nil {
-		app.ErrorLog.Printf("\n\tError: %s", err)
+		app.ErrorLog.Printf("Error: %s", err)
 		app.serverError(w, err)
 		return
 	}
@@ -106,7 +106,7 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
 	if err != nil || id < 1 {
-		app.ErrorLog.Printf("\n\tError: %s", err)
+		app.ErrorLog.Printf("Error: %s", err)
 		app.badRequest(w, r)
 		return
 	}
@@ -114,11 +114,11 @@ func (app *Application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	snippet, err := app.Snippets.Get(id)
 	switch {
 	case err == models.ErrNoRecord:
-		app.ErrorLog.Printf("\n\tError: %s", err)
+		app.ErrorLog.Printf("Error: %s", err)
 		app.notFound(w, r)
 		return
 	case err != nil:
-		app.ErrorLog.Printf("\n\tError: %s", err)
+		app.ErrorLog.Printf("Error: %s", err)
 		app.serverError(w, err)
 		return
 	}
@@ -243,4 +243,19 @@ func (app *Application) logoutUser(w http.ResponseWriter, r *http.Request) {
 	app.Session.Remove(r, "userID")
 	app.Session.Put(r, "flash", "You've been logged out successfully!")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (app *Application) authenticatedUser(r *http.Request) int {
+	return app.Session.GetInt(r, "userID")
+}
+
+func (app *Application) addDefaultData(td *templateData, r *http.Request) *templateData {
+	if td == nil {
+		td = &templateData{}
+	}
+
+	td.AuthenticatedUser = app.authenticatedUser(r)
+	td.CurrentYear = time.Now().Year()
+	td.Flash = app.Session.PopString(r, "flash")
+	return td
 }
