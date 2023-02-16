@@ -6,6 +6,8 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	sqldriver "github.com/go-sql-driver/mysql"
 	"github.com/golangcollege/sessions"
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/bcrypt"
 	"io"
 	"log"
 	"net/http"
@@ -783,11 +785,6 @@ func TestAuthentication(t *testing.T) {
 			log.Printf("problem creating server %v", err)
 		}
 
-		// Adding ExpectPrepare to DB Expectations
-		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WillReturnRows(rows)
-
 		request := newRequest(http.MethodPost, "user/signup")
 		response := httptest.NewRecorder()
 		server.Handler.ServeHTTP(response, request)
@@ -798,11 +795,6 @@ func TestAuthentication(t *testing.T) {
 		if err != nil {
 			log.Printf("problem creating server %v", err)
 		}
-
-		// Adding ExpectPrepare to DB Expectations
-		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WillReturnRows(rows)
 
 		request := newRequest(http.MethodPost, "user/signup")
 		request.PostForm = map[string][]string{
@@ -820,11 +812,6 @@ func TestAuthentication(t *testing.T) {
 			log.Printf("problem creating server %v", err)
 		}
 
-		// Adding ExpectPrepare to DB Expectations
-		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WillReturnRows(rows)
-
 		request := newRequest(http.MethodPost, "user/signup")
 		request.PostForm = map[string][]string{
 			"name":     {"Name"},
@@ -841,11 +828,6 @@ func TestAuthentication(t *testing.T) {
 			log.Printf("problem creating server %v", err)
 		}
 
-		// Adding ExpectPrepare to DB Expectations
-		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WillReturnRows(rows)
-
 		request := newRequest(http.MethodGet, "user/login")
 		response := httptest.NewRecorder()
 		server.Handler.ServeHTTP(response, request)
@@ -857,15 +839,29 @@ func TestAuthentication(t *testing.T) {
 			log.Printf("problem creating server %v", err)
 		}
 
-		// Adding ExpectPrepare to DB Expectations
-		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WillReturnRows(rows)
+		password := "C0mpl3xPass!"
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		assert.NoError(t, err)
+
+		authRows := sqlmock.NewRows([]string{"id", "hashed_password"})
+		authRows.AddRow(
+			1,
+			hashedPassword)
 
 		request := newRequest(http.MethodPost, "user/login")
+		request.PostForm = map[string][]string{
+			"name":     {"Jonas"},
+			"email":    {"jonas@email.com"},
+			"password": {password},
+		}
 		response := httptest.NewRecorder()
+
+		mock.ExpectQuery(
+			"SELECT id, hashed_password FROM users WHERE email \\= \\?").WithArgs(
+			request.PostForm.Get("email")).WillReturnRows(authRows)
+
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusOK)
+		assertStatus(t, response, http.StatusSeeOther)
 	})
 
 	t.Run("OK Case - Call function to logout an existing User", func(t *testing.T) {
