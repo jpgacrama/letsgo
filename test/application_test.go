@@ -643,7 +643,7 @@ func TestCatchAll(t *testing.T) {
 	mock.ExpectBegin()
 	_ = mock.ExpectPrepare("SELECT ...") // SELECT for Latest Statement
 	_ = mock.ExpectPrepare("INSERT ...")
-	prep := mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
+	_ = mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
 
 	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
@@ -674,18 +674,7 @@ func TestCatchAll(t *testing.T) {
 			log.Printf("problem creating server %v", err)
 		}
 
-		// Adding ExpectPrepare to DB Expectations
-		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WillReturnRows(rows)
-
 		request := newRequest(http.MethodGet, "jonas")
-		wrongExpiresValue := "25"
-		request.PostForm = map[string][]string{
-			"title":   {""},
-			"content": {""},
-			"expires": {wrongExpiresValue},
-		}
 		response := httptest.NewRecorder()
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
@@ -727,7 +716,18 @@ func TestAuthentication(t *testing.T) {
 		Session:       session,
 		Users:         &mysql.UserModel{DB: db},
 	}
-	t.Run("OK Case - Call signup User Form", func(t *testing.T) {
+	t.Run("OK Case - Display Sign-up a new User Page", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		request := newRequest(http.MethodGet, "user/signup")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+	t.Run("OK Case - Call Sign-up a new User", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
 			log.Printf("problem creating server %v", err)

@@ -68,14 +68,12 @@ func (app *Application) createRoutes() http.Handler {
 	mux.Post("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippet))
 	mux.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
 	mux.Get("/snippet?id=1", dynamicMiddleware.ThenFunc(app.showSnippet))
-	mux.Get("/{.*}", dynamicMiddleware.ThenFunc(app.notFound))
-
-	// New routes for signing-in and out, and authentication
 	mux.Get("/user/signup", dynamicMiddleware.ThenFunc(app.signupUserForm))
 	mux.Post("/user/signup", dynamicMiddleware.ThenFunc(app.signupUser))
 	mux.Get("/user/login", dynamicMiddleware.ThenFunc(app.loginUserForm))
 	mux.Post("/user/login", dynamicMiddleware.ThenFunc(app.loginUser))
 	mux.Post("/user/logout", dynamicMiddleware.ThenFunc(app.logoutUser))
+	mux.Get("/{catchall:.*}", dynamicMiddleware.ThenFunc(app.notFound))
 
 	fileServer := http.FileServer(http.Dir(StaticFolder))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
@@ -165,8 +163,6 @@ func (app *Application) clientError(w http.ResponseWriter, status int) {
 	http.Error(w, http.StatusText(status), status)
 }
 
-// NOTE: r *http.Request is ignored by this function.
-// It's only used so that I can attach this to the routes
 func (app *Application) notFound(w http.ResponseWriter, r *http.Request) {
 	app.ErrorLog.Printf("%s not found", r.URL.Path)
 	app.clientError(w, http.StatusNotFound)
