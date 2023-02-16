@@ -779,6 +779,30 @@ func TestAuthentication(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusOK)
 	})
+	t.Run("NOK Case - User Signup having Special Error", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		request := newRequest(http.MethodPost, "user/signup")
+		request.PostForm = map[string][]string{
+			"name":     {"Name"},
+			"email":    {"name@email.com"},
+			"password": {"W3f4^4TJ%4@S"},
+		}
+
+		// Adding expectations for DB Mocks
+		mock.ExpectExec("INSERT INTO users ...").WithArgs(
+			request.PostForm.Get("name"),
+			request.PostForm.Get("email"),
+			sqlmock.AnyArg(),
+		).WillReturnError(sql.ErrTxDone)
+
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusInternalServerError)
+	})
 	t.Run("NOK Case - Signup a new user but no data provided", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
