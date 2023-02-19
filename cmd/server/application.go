@@ -64,16 +64,14 @@ func (app *Application) createRoutes() http.Handler {
 	mux := pat.New()
 
 	mux.Get("/", dynamicMiddleware.ThenFunc(app.home))
-	mux.Get("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippetForm))
-	mux.Post("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippet))
+	mux.Get("/snippet/create", dynamicMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.createSnippetForm))
+	mux.Post("/snippet/create", dynamicMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.createSnippet))
 	mux.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
-	mux.Get("/snippet?id=1", dynamicMiddleware.ThenFunc(app.showSnippet))
 	mux.Get("/user/signup", dynamicMiddleware.ThenFunc(app.signupUserForm))
 	mux.Post("/user/signup", dynamicMiddleware.ThenFunc(app.signupUser))
 	mux.Get("/user/login", dynamicMiddleware.ThenFunc(app.loginUserForm))
 	mux.Post("/user/login", dynamicMiddleware.ThenFunc(app.loginUser))
-	mux.Post("/user/logout", dynamicMiddleware.ThenFunc(app.logoutUser))
-	mux.Get("/{catchall:.*}", dynamicMiddleware.ThenFunc(app.notFound))
+	mux.Post("/user/logout", dynamicMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.logoutUser))
 
 	fileServer := http.FileServer(http.Dir(StaticFolder))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
@@ -245,6 +243,8 @@ func (app *Application) logoutUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+// Returns the user ID when the user is authenticated.
+// Returns 0 otherwise
 func (app *Application) authenticatedUser(r *http.Request) int {
 	return app.Session.GetInt(r, "userID")
 }
