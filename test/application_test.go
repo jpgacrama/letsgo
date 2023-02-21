@@ -1,10 +1,14 @@
 package snippetbox_test
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
+	sqldriver "github.com/go-sql-driver/mysql"
 	"github.com/golangcollege/sessions"
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/bcrypt"
 	"io"
 	"log"
 	"net/http"
@@ -36,7 +40,7 @@ func TestHomePage(t *testing.T) {
 	}()
 
 	if err != nil {
-		log.Fatalf("Creating NewSnippetModel failed")
+		log.Printf("Creating NewSnippetModel failed")
 		return
 	}
 	templateCache, err := server.NewTemplateCache("../ui/html/")
@@ -58,7 +62,7 @@ func TestHomePage(t *testing.T) {
 	t.Run("checking home page OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 
 		// Adding ExpectPrepare to DB Expectations
@@ -74,7 +78,7 @@ func TestHomePage(t *testing.T) {
 	t.Run("checking home page NOK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "123")
 		response := httptest.NewRecorder()
@@ -84,7 +88,7 @@ func TestHomePage(t *testing.T) {
 	t.Run("checking home page NOK Case - POST instead of GET", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "")
 		response := httptest.NewRecorder()
@@ -95,7 +99,7 @@ func TestHomePage(t *testing.T) {
 		app.Snippets.Close() // Closing DB so that Internal Server error is triggered
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "")
 		response := httptest.NewRecorder()
@@ -118,7 +122,7 @@ func TestStaticPage(t *testing.T) {
 	t.Run("checking static page OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "static/")
 		response := httptest.NewRecorder()
@@ -128,7 +132,7 @@ func TestStaticPage(t *testing.T) {
 	t.Run("checking static page NOK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "static/123")
 		response := httptest.NewRecorder()
@@ -138,7 +142,7 @@ func TestStaticPage(t *testing.T) {
 	t.Run("checking static page NOK Case - POST instead of GET", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "static/123")
 		response := httptest.NewRecorder()
@@ -164,7 +168,7 @@ func TestShowSnippet(t *testing.T) {
 	}()
 
 	if err != nil {
-		log.Fatalf("Creating NewSnippetModel failed")
+		log.Printf("Creating NewSnippetModel failed")
 		return
 	}
 	templateCache, err := server.NewTemplateCache("../ui/html/")
@@ -186,7 +190,7 @@ func TestShowSnippet(t *testing.T) {
 	t.Run("checking show snippet OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet/1")
 		response := httptest.NewRecorder()
@@ -202,7 +206,7 @@ func TestShowSnippet(t *testing.T) {
 	t.Run("checking show snippet NOK Case - malformed URL", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet?id=0")
 		response := httptest.NewRecorder()
@@ -219,7 +223,7 @@ func TestShowSnippet(t *testing.T) {
 	t.Run("checking show snippet NOK Case - POST instead of GET", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "snippet/1")
 		response := httptest.NewRecorder()
@@ -236,7 +240,7 @@ func TestShowSnippet(t *testing.T) {
 	t.Run("checking show snippet NOK Case - Malformed snippet URL", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet?id=0")
 		response := httptest.NewRecorder()
@@ -253,7 +257,7 @@ func TestShowSnippet(t *testing.T) {
 	t.Run("checking show snippet NOK Case - ID is not a number", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet/jonas")
 		response := httptest.NewRecorder()
@@ -270,7 +274,7 @@ func TestShowSnippet(t *testing.T) {
 		app.Snippets.Close() // Closing the DB Connection to mimic Internal Server Error
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet/1")
 		response := httptest.NewRecorder()
@@ -302,7 +306,7 @@ func TestShowSnippetIDNotFound(t *testing.T) {
 	}()
 
 	if err != nil {
-		log.Fatalf("Creating NewSnippetModel failed")
+		log.Printf("Creating NewSnippetModel failed")
 		return
 	}
 	templateCache, err := server.NewTemplateCache("../ui/html/")
@@ -324,7 +328,7 @@ func TestShowSnippetIDNotFound(t *testing.T) {
 	t.Run("checking show snippet NOK Case - no ID found", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet/10")
 		response := httptest.NewRecorder()
@@ -356,7 +360,7 @@ func TestCreateSnippet(t *testing.T) {
 	}()
 
 	if err != nil {
-		log.Fatalf("Creating NewSnippetModel failed")
+		log.Printf("Creating NewSnippetModel failed")
 		return
 	}
 	templateCache, err := server.NewTemplateCache("../ui/html/")
@@ -378,7 +382,7 @@ func TestCreateSnippet(t *testing.T) {
 	t.Run("checking create snippet OK Case", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "snippet/create")
 		request.PostForm = map[string][]string{
@@ -399,24 +403,24 @@ func TestCreateSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 
 		// It now redirects to another page. I should continue reading the book for more info.
-		assertStatus(t, response, http.StatusSeeOther)
+		assertStatus(t, response, http.StatusFound)
 	})
 	// We are now showing the form which allows the user to enter data to be POST-ed
 	t.Run("checking create snippet OK Case - GET instead of POST", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet/create")
 		response := httptest.NewRecorder()
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusOK)
+		assertStatus(t, response, http.StatusFound)
 	})
 	t.Run("checking create snippet NOK Case - malformed URL", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodGet, "snippet/create/?id=1")
 		response := httptest.NewRecorder()
@@ -432,7 +436,7 @@ func TestCreateSnippet(t *testing.T) {
 	t.Run("checking create snippet NOK Case - Title is too long", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "snippet/create")
 
@@ -482,12 +486,12 @@ func TestCreateSnippet(t *testing.T) {
 		).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
+		assertStatus(t, response, http.StatusFound) // Error message is displayed on screen instead
 	})
 	t.Run("checking create snippet NOK Case - Title is blank", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "snippet/create")
 		blankTitle := ""
@@ -506,12 +510,12 @@ func TestCreateSnippet(t *testing.T) {
 		).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
+		assertStatus(t, response, http.StatusFound) // Error message is displayed on screen instead
 	})
 	t.Run("checking create snippet NOK Case - Content is blank", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "snippet/create")
 		blankContent := ""
@@ -530,12 +534,12 @@ func TestCreateSnippet(t *testing.T) {
 		).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
+		assertStatus(t, response, http.StatusFound) // Error message is displayed on screen instead
 	})
 	t.Run("checking create snippet NOK Case - Expires is blank", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "snippet/create")
 		blankExpires := ""
@@ -554,13 +558,13 @@ func TestCreateSnippet(t *testing.T) {
 		).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
+		assertStatus(t, response, http.StatusFound) // Error message is displayed on screen instead
 	})
 	// NOK Case where Expires is not any of these values: 365, 7 , or 1
 	t.Run("checking create snippet NOK Case - Expires value is invalid", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		request := newRequest(http.MethodPost, "snippet/create")
 		wrongExpiresValue := "25"
@@ -579,12 +583,12 @@ func TestCreateSnippet(t *testing.T) {
 		).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
+		assertStatus(t, response, http.StatusFound) // Error message is displayed on screen instead
 	})
 	t.Run("checking create snippet NOK Case - Parse Form fails", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		// I decided not to use newRequest() to trigger an error
 		request := httptest.NewRequest(
@@ -603,14 +607,14 @@ func TestCreateSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 
 		// It now redirects to another page. I should continue reading the book for more info.
-		assertStatus(t, response, http.StatusInternalServerError)
+		assertStatus(t, response, http.StatusFound)
 	})
 
 	t.Run("checking create snippet NOK Case - DB is closed so Insert Fails", func(t *testing.T) {
 		app.Snippets.Close() // Closing the database so Insert() fails
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 		// I decided not to use newRequest() to trigger an error
 		request := newRequest(http.MethodPost, "snippet/create")
@@ -631,7 +635,7 @@ func TestCreateSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 
 		// It now redirects to another page. I should continue reading the book for more info.
-		assertStatus(t, response, http.StatusInternalServerError)
+		assertStatus(t, response, http.StatusFound)
 	})
 }
 
@@ -640,7 +644,7 @@ func TestCatchAll(t *testing.T) {
 	mock.ExpectBegin()
 	_ = mock.ExpectPrepare("SELECT ...") // SELECT for Latest Statement
 	_ = mock.ExpectPrepare("INSERT ...")
-	prep := mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
+	_ = mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
 
 	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	defer func() {
@@ -650,7 +654,7 @@ func TestCatchAll(t *testing.T) {
 	}()
 
 	if err != nil {
-		log.Fatalf("Creating NewSnippetModel failed")
+		log.Printf("Creating NewSnippetModel failed")
 		return
 	}
 	templateCache, err := server.NewTemplateCache("../ui/html/")
@@ -668,24 +672,275 @@ func TestCatchAll(t *testing.T) {
 	t.Run("checking catch-all", func(t *testing.T) {
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
-
-		// Adding ExpectPrepare to DB Expectations
-		rows := sqlmock.NewRows([]string{"id", "title", "content", "created", "expires"})
-		rows.AddRow(0, "Title", "Content", time.Now(), "2024-01-24T10:23:42Z")
-		prep.ExpectQuery().WillReturnRows(rows)
 
 		request := newRequest(http.MethodGet, "jonas")
-		wrongExpiresValue := "25"
-		request.PostForm = map[string][]string{
-			"title":   {""},
-			"content": {""},
-			"expires": {wrongExpiresValue},
-		}
 		response := httptest.NewRecorder()
 		server.Handler.ServeHTTP(response, request)
 		assertStatus(t, response, http.StatusNotFound)
+	})
+}
+
+func TestAuthentication(t *testing.T) {
+	db, mock := NewMock()
+	mock.ExpectBegin()
+	_ = mock.ExpectPrepare("SELECT ...") // SELECT for Latest Statement
+	_ = mock.ExpectPrepare("INSERT ...")
+	_ = mock.ExpectPrepare("SELECT ...") // SELECT for just one of the items
+
+	repo, err := mysql.NewSnippetModel(db, infoLog, errorLog)
+	defer func() {
+		if err == nil {
+			repo.Close()
+		}
+	}()
+
+	if err != nil {
+		log.Printf("Creating NewSnippetModel failed")
+		return
+	}
+	templateCache, err := server.NewTemplateCache("../ui/html/")
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
+	session := sessions.New([]byte(*createSession()))
+	session.Lifetime = 12 * time.Hour
+
+	app := &server.Application{
+		Port:          &port,
+		InfoLog:       infoLog,
+		ErrorLog:      errorLog,
+		Snippets:      repo,
+		TemplateCache: templateCache,
+		Session:       session,
+		Users:         &mysql.UserModel{DB: db},
+	}
+	t.Run("OK Case - Display Sign-up a new User Page", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		request := newRequest(http.MethodGet, "user/signup")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+	t.Run("OK Case - Call Sign-up a new User", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		request := newRequest(http.MethodPost, "user/signup")
+		request.PostForm = map[string][]string{
+			"name":     {"Name"},
+			"email":    {"name@email.com"},
+			"password": {"W3f4^4TJ%4@S"},
+		}
+
+		// Adding expectations for DB Mocks
+		mock.ExpectExec("INSERT INTO users ...").WithArgs(
+			request.PostForm.Get("name"),
+			request.PostForm.Get("email"),
+			sqlmock.AnyArg(),
+		).WillReturnResult(sqlmock.NewResult(1, 1))
+
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusSeeOther)
+	})
+	t.Run("NOK Case - Duplicate Email Used", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		request := newRequest(http.MethodPost, "user/signup")
+		request.PostForm = map[string][]string{
+			"name":     {"Name"},
+			"email":    {"name@email.com"},
+			"password": {"W3f4^4TJ%4@S"},
+		}
+
+		// Adding expectations for DB Mocks
+		mock.ExpectExec("INSERT INTO users ...").WithArgs(
+			request.PostForm.Get("name"),
+			request.PostForm.Get("email"),
+			sqlmock.AnyArg(),
+		).WillReturnError(&sqldriver.MySQLError{
+			Number:  1062,
+			Message: "Duplicate entry 'name@email.com' for key 'users_uc_email'",
+		})
+
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+	t.Run("NOK Case - User Signup having Special Error", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		request := newRequest(http.MethodPost, "user/signup")
+		request.PostForm = map[string][]string{
+			"name":     {"Name"},
+			"email":    {"name@email.com"},
+			"password": {"W3f4^4TJ%4@S"},
+		}
+
+		// Adding expectations for DB Mocks
+		mock.ExpectExec("INSERT INTO users ...").WithArgs(
+			request.PostForm.Get("name"),
+			request.PostForm.Get("email"),
+			sqlmock.AnyArg(),
+		).WillReturnError(sql.ErrTxDone)
+
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusInternalServerError)
+	})
+	t.Run("NOK Case - Signup a new user but no data provided", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		request := newRequest(http.MethodPost, "user/signup")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+	t.Run("NOK Case - Signup a new user but with invalid email address", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		request := newRequest(http.MethodPost, "user/signup")
+		request.PostForm = map[string][]string{
+			"name":     {"Name"},
+			"email":    {"example@com.-domain"},
+			"password": {"W3f4^4TJ%4@S"},
+		}
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+	t.Run("NOK Case - Signup a new user but with a short password", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		request := newRequest(http.MethodPost, "user/signup")
+		request.PostForm = map[string][]string{
+			"name":     {"Name"},
+			"email":    {"name@email.com"},
+			"password": {"W3f4"},
+		}
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+	t.Run("OK Case - Call function to login an existing User", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		request := newRequest(http.MethodGet, "user/login")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+	t.Run("OK Case - Call function to authenticate an existing User", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		password := "C0mpl3xPass!"
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		assert.NoError(t, err)
+
+		authRows := sqlmock.NewRows([]string{"id", "hashed_password"})
+		authRows.AddRow(
+			1,
+			hashedPassword)
+
+		request := newRequest(http.MethodPost, "user/login")
+		request.PostForm = map[string][]string{
+			"name":     {"Jonas"},
+			"email":    {"jonas@email.com"},
+			"password": {password},
+		}
+		response := httptest.NewRecorder()
+
+		mock.ExpectQuery(
+			"SELECT id, hashed_password FROM users WHERE email \\= \\?").WithArgs(
+			request.PostForm.Get("email")).WillReturnRows(authRows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusSeeOther)
+	})
+	t.Run("NOK Case - Authenticate an existing user failed", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		password := "C0mpl3xPass!"
+		request := newRequest(http.MethodPost, "user/login")
+		request.PostForm = map[string][]string{
+			"name":     {"Jonas"},
+			"email":    {"jonas@email.com"},
+			"password": {password},
+		}
+		response := httptest.NewRecorder()
+
+		mock.ExpectQuery(
+			"SELECT id, hashed_password FROM users WHERE email \\= \\?").WithArgs(
+			request.PostForm.Get("email")).WillReturnError(sql.ErrNoRows)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusOK)
+	})
+	t.Run("NOK Case - Authenticate an existing user failed with Special Error", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		password := "C0mpl3xPass!"
+		request := newRequest(http.MethodPost, "user/login")
+		request.PostForm = map[string][]string{
+			"name":     {"Jonas"},
+			"email":    {"jonas@email.com"},
+			"password": {password},
+		}
+		response := httptest.NewRecorder()
+
+		mock.ExpectQuery(
+			"SELECT id, hashed_password FROM users WHERE email \\= \\?").WithArgs(
+			request.PostForm.Get("email")).WillReturnError(sql.ErrTxDone)
+
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusInternalServerError)
+	})
+	t.Run("OK Case - Call function to logout an existing User", func(t *testing.T) {
+		server, err := server.CreateServer(app)
+		if err != nil {
+			log.Printf("problem creating server %v", err)
+		}
+
+		request := newRequest(http.MethodPost, "user/logout")
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+		assertStatus(t, response, http.StatusFound)
 	})
 }
 

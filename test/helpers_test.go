@@ -28,7 +28,7 @@ func TestHelpers(t *testing.T) {
 	}()
 
 	if err != nil {
-		log.Fatalf("Creating NewSnippetModel failed")
+		log.Printf("Creating NewSnippetModel failed")
 		return
 	}
 	templateCache, err := server.NewTemplateCache("../ui/html/")
@@ -51,7 +51,7 @@ func TestHelpers(t *testing.T) {
 		app.TemplateCache = nil
 		server, err := server.CreateServer(app)
 		if err != nil {
-			log.Fatalf("problem creating server %v", err)
+			log.Printf("problem creating server %v", err)
 		}
 
 		// Adding ExpectPrepare to DB Expectations

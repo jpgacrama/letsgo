@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 	"snippetbox/pkg/models"
 	"time"
@@ -24,7 +25,7 @@ func NewSnippetModel(db *sql.DB, infolog, errorlog *log.Logger) (*SnippetDatabas
 	snippetModel := &SnippetDatabase{db: db, infoLog: infolog, errorLog: errorlog}
 	err := snippetModel.initializeContext()
 	if err != nil {
-		snippetModel.errorLog.Printf("\n\t--- InitDatabase(): Error Initializing Context: %s ---", err)
+		snippetModel.errorLog.Printf("--- InitDatabase(): Error Initializing Context: %s ---", err)
 		return nil, err
 	}
 
@@ -32,7 +33,7 @@ func NewSnippetModel(db *sql.DB, infolog, errorlog *log.Logger) (*SnippetDatabas
 	latestStatement, err := snippetModel.tx.PrepareContext(snippetModel.ctx, `SELECT id, title, content, created, expires FROM snippets
     WHERE expires > UTC_TIMESTAMP() ORDER BY created DESC LIMIT 10`)
 	if err != nil {
-		snippetModel.errorLog.Printf("\n\t--- Latest(): Error Preparing Statement: %s ---", err)
+		snippetModel.errorLog.Printf("--- Latest(): Error Preparing Statement: %s ---", err)
 		return nil, err
 	}
 
@@ -40,7 +41,7 @@ func NewSnippetModel(db *sql.DB, infolog, errorlog *log.Logger) (*SnippetDatabas
 	insertStatement, err := snippetModel.tx.PrepareContext(snippetModel.ctx, `INSERT INTO snippets (title, content, created, expires)
 	VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))`)
 	if err != nil {
-		snippetModel.errorLog.Printf("\n\t--- Get(): Error Preparing Statement: %s ---", err)
+		snippetModel.errorLog.Printf("--- Get(): Error Preparing Statement: %s ---", err)
 		return nil, err
 	}
 
@@ -48,7 +49,7 @@ func NewSnippetModel(db *sql.DB, infolog, errorlog *log.Logger) (*SnippetDatabas
 	getStatement, err := snippetModel.tx.PrepareContext(snippetModel.ctx, `SELECT id, title, content, created, expires FROM snippets
 	WHERE expires > UTC_TIMESTAMP() AND id = ?`)
 	if err != nil {
-		snippetModel.errorLog.Printf("\n\t--- Get(): Error Preparing Statement: %s ---", err)
+		snippetModel.errorLog.Printf("--- Get(): Error Preparing Statement: %s ---", err)
 		return nil, err
 	}
 
@@ -68,14 +69,15 @@ func (m *SnippetDatabase) Close() {
 
 // NOTE: rows.Close() must be called by the calling function!
 func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
-	m.infoLog.Printf("\n\tLatest() called")
+	m.infoLog.Printf("Latest() called")
 	if m.LatestStatement == nil {
-		m.errorLog.Fatalf("\n\t---- Call NewSnippetModel() first----")
+		m.errorLog.Printf("---- Call NewSnippetModel() first----")
+		return nil, errors.New("latestStatement is nil")
 	}
 
 	rows, err := m.LatestStatement.QueryContext(m.ctx)
 	if err != nil {
-		m.errorLog.Printf("\n\t--- Latest(): Error Querying Statement: %s ---", err)
+		m.errorLog.Printf("--- Latest(): Error Querying Statement: %s ---", err)
 		m.tx.Rollback()
 		return nil, err
 	}
@@ -86,12 +88,12 @@ func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 		expiresString := ""
 		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &expiresString)
 		if err != nil {
-			m.errorLog.Printf("\n\t--- Error: %s ---", err)
+			m.errorLog.Printf("--- Error: %s ---", err)
 			return nil, err
 		}
 		s.Expires, err = time.Parse(time.RFC3339, expiresString)
 		if err != nil {
-			m.errorLog.Printf("\n\t--- Error: %s ---", err)
+			m.errorLog.Printf("--- Error: %s ---", err)
 			return nil, err
 		}
 		snippets = append(snippets, s)
@@ -110,21 +112,22 @@ func (m *SnippetDatabase) Latest() ([]*models.Snippet, error) {
 
 // This function takes the title, content and the time it expires
 func (m *SnippetDatabase) Insert(title, content, numOfDaysToExpire string) (int, error) {
-	if m.LatestStatement == nil {
-		m.errorLog.Fatalf("\n\t---- Call NewSnippetModel() first----")
+	if m.InsertStatement == nil {
+		m.errorLog.Printf("---- Call NewSnippetModel() first----")
+		return -1, errors.New("there is no Insert Statement")
 	}
 
 	errorValue := -1
 	// Convert expires to a string representing the number of days
 	result, err := m.InsertStatement.ExecContext(m.ctx, title, content, numOfDaysToExpire)
 	if err != nil {
-		m.errorLog.Printf("\n\tError: %s", err)
+		m.errorLog.Printf("Error: %s", err)
 		m.tx.Rollback()
 		return errorValue, err
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
-		m.errorLog.Printf("\n\tError: %s", err)
+		m.errorLog.Printf("Error: %s", err)
 		return errorValue, err
 	}
 	return int(id), nil
@@ -133,7 +136,8 @@ func (m *SnippetDatabase) Insert(title, content, numOfDaysToExpire string) (int,
 func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
 	if m.LatestStatement == nil {
 		// Assumes that even the loggers for SnippetModel were not set yet
-		m.errorLog.Fatalf("\n\t---- Call NewSnippetModel() first----")
+		m.errorLog.Printf("---- Call NewSnippetModel() first----")
+		return nil, errors.New("latestStatement does not exist")
 	}
 
 	s := &models.Snippet{}
@@ -141,17 +145,17 @@ func (m *SnippetDatabase) Get(id int) (*models.Snippet, error) {
 	err := m.GetStatement.QueryRowContext(m.ctx, id).Scan(&s.ID, &s.Title, &s.Content, &s.Created, &expiresString)
 	switch {
 	case err == sql.ErrNoRows:
-		m.errorLog.Printf("\n\t--- Error: %s ---", err)
+		m.errorLog.Printf("--- Error: %s ---", err)
 		m.tx.Rollback()
 		return nil, models.ErrNoRecord
 	case err != nil:
-		m.errorLog.Printf("\n\t--- Error: %s ---", err)
+		m.errorLog.Printf("--- Error: %s ---", err)
 		m.tx.Rollback()
 		return nil, err
 	default:
 		s.Expires, err = time.Parse(time.RFC3339, expiresString)
 		if err != nil {
-			m.errorLog.Printf("\n\t--- Error: %s ---", err)
+			m.errorLog.Printf("--- Error: %s ---", err)
 			return nil, err
 		}
 		m.infoLog.Printf("ID is %v, created on %s\n", s.ID, s.Created)
@@ -165,7 +169,7 @@ func (m *SnippetDatabase) initializeContext() error {
 	}
 	tx, err := m.db.BeginTx(m.ctx, nil)
 	if err != nil {
-		m.errorLog.Printf("\n\t--- initializeContext(): Error Beginning Transaction: %s ---", err)
+		m.errorLog.Printf("--- initializeContext(): Error Beginning Transaction: %s ---", err)
 		return err
 	}
 	m.tx = tx

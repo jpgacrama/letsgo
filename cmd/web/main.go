@@ -13,6 +13,7 @@ import (
 	"github.com/golangcollege/sessions"
 
 	"crypto/tls"
+	"net/http"
 )
 
 type flags struct {
@@ -65,7 +66,7 @@ func main() {
 	infoLog, errorLog := server.CreateLoggers()
 	db, err := openDB(*flags.dsn)
 	if err != nil {
-		errorLog.Fatalf("Error Opening DB Connection: %s", err)
+		errorLog.Printf("Error Opening DB Connection: %s", err)
 	}
 	defer db.Close()
 
@@ -76,6 +77,7 @@ func main() {
 
 	session := sessions.New([]byte(*flags.secret))
 	session.Lifetime = 12 * time.Hour
+	session.SameSite = http.SameSiteStrictMode
 	snippets, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	if err != nil {
 		errorLog.Fatal(err)
@@ -91,7 +93,8 @@ func main() {
 			Snippets:      snippets,
 			TemplateCache: templateCache,
 			Session:       session,
-			TLSConfig:     tlsConfig})
+			TLSConfig:     tlsConfig,
+			Users:         &mysql.UserModel{DB: db}})
 	if err == nil {
 		infoLog.Printf("Starting server on %s", *flags.port)
 		errorLog.Fatal(server.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem"))
