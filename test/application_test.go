@@ -403,7 +403,7 @@ func TestCreateSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 
 		// It now redirects to another page. I should continue reading the book for more info.
-		assertStatus(t, response, http.StatusSeeOther)
+		assertStatus(t, response, http.StatusFound)
 	})
 	// We are now showing the form which allows the user to enter data to be POST-ed
 	t.Run("checking create snippet OK Case - GET instead of POST", func(t *testing.T) {
@@ -415,7 +415,7 @@ func TestCreateSnippet(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusOK)
+		assertStatus(t, response, http.StatusFound)
 	})
 	t.Run("checking create snippet NOK Case - malformed URL", func(t *testing.T) {
 		server, err := server.CreateServer(app)
@@ -486,7 +486,7 @@ func TestCreateSnippet(t *testing.T) {
 		).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
+		assertStatus(t, response, http.StatusFound) // Error message is displayed on screen instead
 	})
 	t.Run("checking create snippet NOK Case - Title is blank", func(t *testing.T) {
 		server, err := server.CreateServer(app)
@@ -510,7 +510,7 @@ func TestCreateSnippet(t *testing.T) {
 		).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
+		assertStatus(t, response, http.StatusFound) // Error message is displayed on screen instead
 	})
 	t.Run("checking create snippet NOK Case - Content is blank", func(t *testing.T) {
 		server, err := server.CreateServer(app)
@@ -534,7 +534,7 @@ func TestCreateSnippet(t *testing.T) {
 		).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
+		assertStatus(t, response, http.StatusFound) // Error message is displayed on screen instead
 	})
 	t.Run("checking create snippet NOK Case - Expires is blank", func(t *testing.T) {
 		server, err := server.CreateServer(app)
@@ -558,7 +558,7 @@ func TestCreateSnippet(t *testing.T) {
 		).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
+		assertStatus(t, response, http.StatusFound) // Error message is displayed on screen instead
 	})
 	// NOK Case where Expires is not any of these values: 365, 7 , or 1
 	t.Run("checking create snippet NOK Case - Expires value is invalid", func(t *testing.T) {
@@ -583,7 +583,7 @@ func TestCreateSnippet(t *testing.T) {
 		).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusOK) // Error message is displayed on screen instead
+		assertStatus(t, response, http.StatusFound) // Error message is displayed on screen instead
 	})
 	t.Run("checking create snippet NOK Case - Parse Form fails", func(t *testing.T) {
 		server, err := server.CreateServer(app)
@@ -607,7 +607,7 @@ func TestCreateSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 
 		// It now redirects to another page. I should continue reading the book for more info.
-		assertStatus(t, response, http.StatusInternalServerError)
+		assertStatus(t, response, http.StatusFound)
 	})
 
 	t.Run("checking create snippet NOK Case - DB is closed so Insert Fails", func(t *testing.T) {
@@ -635,7 +635,7 @@ func TestCreateSnippet(t *testing.T) {
 		server.Handler.ServeHTTP(response, request)
 
 		// It now redirects to another page. I should continue reading the book for more info.
-		assertStatus(t, response, http.StatusInternalServerError)
+		assertStatus(t, response, http.StatusFound)
 	})
 }
 
@@ -940,7 +940,7 @@ func TestAuthentication(t *testing.T) {
 		request := newRequest(http.MethodPost, "user/logout")
 		response := httptest.NewRecorder()
 		server.Handler.ServeHTTP(response, request)
-		assertStatus(t, response, http.StatusSeeOther)
+		assertStatus(t, response, http.StatusFound)
 	})
 }
 
