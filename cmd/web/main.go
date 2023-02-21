@@ -13,6 +13,7 @@ import (
 	"github.com/golangcollege/sessions"
 
 	"crypto/tls"
+	"net/http"
 )
 
 type flags struct {
@@ -76,6 +77,7 @@ func main() {
 
 	session := sessions.New([]byte(*flags.secret))
 	session.Lifetime = 12 * time.Hour
+	session.SameSite = http.SameSiteStrictMode
 	snippets, err := mysql.NewSnippetModel(db, infoLog, errorLog)
 	if err != nil {
 		errorLog.Fatal(err)
