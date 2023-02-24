@@ -119,4 +119,16 @@ func TestUsers(t *testing.T) {
 		assert.NoError(t, newErr)
 		assert.NotNil(t, modelsUser)
 	})
+	t.Run("UserModel NOK Case - Testing Get - No Rows", func(t *testing.T) {
+		db, mock := NewMock()
+		userModel := &mysql.UserModel{DB: db}
+		id := 1
+
+		mock.ExpectQuery(
+			"SELECT id, name, email, created FROM users WHERE id \\= \\?").
+			WithArgs(id).WillReturnError(sql.ErrNoRows)
+		modelsUser, newErr := userModel.Get(id)
+		assert.Error(t, newErr)
+		assert.Nil(t, modelsUser)
+	})
 }
