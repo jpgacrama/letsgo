@@ -51,7 +51,6 @@ func (app *Application) requireAuthenticatedUser(next http.Handler) http.Handler
 }
 
 func noSurf(next http.Handler) http.Handler {
-	fmt.Printf("noSurf() called")
 	csrfHandler := nosurf.New(next)
 	csrfHandler.SetBaseCookie(http.Cookie{
 		HttpOnly: true,
