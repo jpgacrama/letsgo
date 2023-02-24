@@ -10,6 +10,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
+	"snippetbox/pkg/models"
 )
 
 func TestUsers(t *testing.T) {
@@ -127,6 +128,18 @@ func TestUsers(t *testing.T) {
 		mock.ExpectQuery(
 			"SELECT id, name, email, created FROM users WHERE id \\= \\?").
 			WithArgs(id).WillReturnError(sql.ErrNoRows)
+		modelsUser, newErr := userModel.Get(id)
+		assert.Error(t, newErr)
+		assert.Nil(t, modelsUser)
+	})
+	t.Run("UserModel NOK Case - Testing Get - Unexpected Error", func(t *testing.T) {
+		db, mock := NewMock()
+		userModel := &mysql.UserModel{DB: db}
+		id := 1
+
+		mock.ExpectQuery(
+			"SELECT id, name, email, created FROM users WHERE id \\= \\?").
+			WithArgs(id).WillReturnError(models.ErrInvalidCredentials)
 		modelsUser, newErr := userModel.Get(id)
 		assert.Error(t, newErr)
 		assert.Nil(t, modelsUser)
