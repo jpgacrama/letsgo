@@ -2,17 +2,20 @@ package snippetbox_test
 
 import (
 	"database/sql"
+	"fmt"
+	"snippetbox/pkg/models/mysql"
+	"testing"
+	"time"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
-	"snippetbox/pkg/models/mysql"
-	"testing"
 )
 
 func TestUsers(t *testing.T) {
-	db, mock := NewMock()
-	userModel := &mysql.UserModel{DB: db}
 	t.Run("Insert OK Case - Testing Insert", func(t *testing.T) {
+		db, mock := NewMock()
+		userModel := &mysql.UserModel{DB: db}
 		mock.ExpectExec("INSERT INTO users ...").WithArgs(
 			"Name", "Email", sqlmock.AnyArg(),
 		).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -21,6 +24,8 @@ func TestUsers(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("Authenticate OK Case", func(t *testing.T) {
+		db, mock := NewMock()
+		userModel := &mysql.UserModel{DB: db}
 		password := "C0mpl3xPass!"
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		assert.NoError(t, err)
@@ -38,8 +43,9 @@ func TestUsers(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 1, authStatus)
 	})
-
 	t.Run("Authenticate NOK Case - Password is too short", func(t *testing.T) {
+		db, mock := NewMock()
+		userModel := &mysql.UserModel{DB: db}
 		password := "password123"
 		rows := sqlmock.NewRows([]string{"id", "hashed_password"})
 		rows.AddRow(
@@ -54,6 +60,8 @@ func TestUsers(t *testing.T) {
 		assert.Equal(t, 0, authStatus)
 	})
 	t.Run("Authenticate NOK Case - Special Error when looking for email", func(t *testing.T) {
+		db, mock := NewMock()
+		userModel := &mysql.UserModel{DB: db}
 		rows := sqlmock.NewRows([]string{"id", "hashed_password"})
 		rows.AddRow(
 			1,
@@ -67,6 +75,8 @@ func TestUsers(t *testing.T) {
 		assert.Equal(t, 0, authStatus)
 	})
 	t.Run("Authenticate NOK Case - No email found", func(t *testing.T) {
+		db, mock := NewMock()
+		userModel := &mysql.UserModel{DB: db}
 		mock.ExpectQuery(
 			"SELECT id, hashed_password FROM users WHERE email \\= \\?").WithArgs(
 			"NoEmail").WillReturnError(sql.ErrNoRows)
@@ -75,6 +85,8 @@ func TestUsers(t *testing.T) {
 		assert.Equal(t, 0, authStatus)
 	})
 	t.Run("Authenticate NOK Case - Invalid Password", func(t *testing.T) {
+		db, mock := NewMock()
+		userModel := &mysql.UserModel{DB: db}
 		rows := sqlmock.NewRows([]string{"id", "hashed_password"})
 		rows.AddRow(
 			1,
@@ -88,9 +100,23 @@ func TestUsers(t *testing.T) {
 		assert.Equal(t, 0, authStatus)
 	})
 	t.Run("UserModel OK Case - Testing Get", func(t *testing.T) {
+		db, mock := NewMock()
+		userModel := &mysql.UserModel{DB: db}
+		id := 1
+		rows := sqlmock.NewRows([]string{
+			"id", "name", "email", "created"})
+		timeCreated, err := time.Parse(time.RFC3339, "2024-02-23T10:23:42Z")
+		if err != nil {
+			fmt.Printf("parsing time failed")
+		}
 
-		userModel, err := userModel.Get(0)
-		assert.NoError(t, err)
-		assert.Nil(t, userModel)
+		rows.AddRow(
+			id, "Jonas", "jonas@email.com", timeCreated)
+		mock.ExpectQuery(
+			"SELECT id, name, email, created FROM users WHERE id \\= \\?").
+			WithArgs(id).WillReturnRows(rows)
+		modelsUser, newErr := userModel.Get(id)
+		assert.NoError(t, newErr)
+		assert.NotNil(t, modelsUser)
 	})
 }
