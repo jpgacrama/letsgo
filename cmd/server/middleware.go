@@ -1,10 +1,16 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"github.com/justinas/nosurf"
 	"net/http"
+	"snippetbox/pkg/models"
 )
+
+type contextKey string
+
+var contextKeyUser = contextKey("user")
 
 func secureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -39,14 +45,36 @@ func (app *Application) recoverPanic(next http.Handler) http.Handler {
 
 func (app *Application) requireAuthenticatedUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		if app.authenticatedUser(r) == 0 {
+		// Check that the authenticatedUser helper doesn't return nil.
+		if app.authenticatedUser(r) == nil {
 			http.Redirect(w, r, "/user/login", http.StatusFound)
 			return
 		}
 
-		// Otherwise call the next handler in the chain.
 		next.ServeHTTP(w, r)
+	})
+}
+
+// Check if a userID value exists in the session. If this isn't
+// present then call the next handler in the chain as normal.
+func (app *Application) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		exists := app.Session.Exists(r, "userID")
+		if !exists {
+			next.ServeHTTP(w, r)
+			return
+		}
+		user, err := app.Users.Get(app.Session.GetInt(r, "userID"))
+		if err == models.ErrNoRecord {
+			app.Session.Remove(r, "userID")
+			next.ServeHTTP(w, r)
+			return
+		} else if err != nil {
+			app.serverError(w, err)
+			return
+		}
+		ctx := context.WithValue(r.Context(), contextKeyUser, user)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 

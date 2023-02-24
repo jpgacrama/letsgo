@@ -12,6 +12,10 @@ import (
 	"time"
 )
 
+type contextKey string
+
+var contextKeyUser = contextKey("user")
+
 type flags struct {
 	port   *string
 	dsn    *string

@@ -59,7 +59,7 @@ func CreateServer(app *Application) (*http.Server, error) {
 
 func (app *Application) createRoutes() http.Handler {
 	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
-	dynamicMiddleware := alice.New(app.Session.Enable, noSurf)
+	dynamicMiddleware := alice.New(app.Session.Enable, noSurf, app.authenticate)
 
 	mux := pat.New()
 	mux.Get("/", dynamicMiddleware.ThenFunc(app.home))
@@ -245,8 +245,12 @@ func (app *Application) logoutUser(w http.ResponseWriter, r *http.Request) {
 
 // Returns the user ID when the user is authenticated.
 // Returns 0 otherwise
-func (app *Application) authenticatedUser(r *http.Request) int {
-	return app.Session.GetInt(r, "userID")
+func (app *Application) authenticatedUser(r *http.Request) *models.User {
+	user, ok := r.Context().Value(contextKeyUser).(*models.User)
+	if !ok {
+		return nil
+	}
+	return user
 }
 
 func (app *Application) addDefaultData(td *templateData, r *http.Request) *templateData {
