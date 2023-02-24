@@ -3,6 +3,10 @@ package server
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/bmizerany/pat"
+	"github.com/golangcollege/sessions"
+	"github.com/justinas/alice"
+	"github.com/justinas/nosurf"
 	"html/template"
 	"log"
 	"net/http"
@@ -11,11 +15,6 @@ import (
 	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
 	"strconv"
-
-	"github.com/justinas/alice"
-
-	"github.com/bmizerany/pat"
-	"github.com/golangcollege/sessions"
 	"time"
 )
 
@@ -60,14 +59,14 @@ func CreateServer(app *Application) (*http.Server, error) {
 
 func (app *Application) createRoutes() http.Handler {
 	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
-	dynamicMiddleware := alice.New(app.Session.Enable)
-	mux := pat.New()
+	dynamicMiddleware := alice.New(app.Session.Enable, noSurf)
 
+	mux := pat.New()
 	mux.Get("/", dynamicMiddleware.ThenFunc(app.home))
 	mux.Get("/snippet/create", dynamicMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.createSnippetForm))
 	mux.Post("/snippet/create", dynamicMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.createSnippet))
 	mux.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
-	mux.Get("/snippet?id=1", dynamicMiddleware.ThenFunc(app.showSnippet))
+
 	mux.Get("/user/signup", dynamicMiddleware.ThenFunc(app.signupUserForm))
 	mux.Post("/user/signup", dynamicMiddleware.ThenFunc(app.signupUser))
 	mux.Get("/user/login", dynamicMiddleware.ThenFunc(app.loginUserForm))
@@ -255,8 +254,10 @@ func (app *Application) addDefaultData(td *templateData, r *http.Request) *templ
 		td = &templateData{}
 	}
 
-	td.AuthenticatedUser = app.authenticatedUser(r)
+	// Add the CSRF token to the templateData struct.
+	td.CSRFToken = nosurf.Token(r)
 	td.CurrentYear = time.Now().Year()
 	td.Flash = app.Session.PopString(r, "flash")
+	td.AuthenticatedUser = app.authenticatedUser(r)
 	return td
 }

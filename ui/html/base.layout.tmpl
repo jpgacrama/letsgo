@@ -16,12 +16,15 @@
             <div>
                 <a href='/'>Home</a>
                 {{if .AuthenticatedUser}}
+
                     <a href='/snippet/create'>Create snippet</a>
                 {{end}}
             </div>
             <div>
                 {{if .AuthenticatedUser}}
                     <form action='/user/logout' method='POST'>
+                        <!-- Include the CSRF token -->
+                        <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
                         <button>Logout</button>
                     </form>
                 {{else}}

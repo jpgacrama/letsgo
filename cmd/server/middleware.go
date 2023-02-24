@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/justinas/nosurf"
 	"net/http"
 )
 
@@ -47,4 +48,16 @@ func (app *Application) requireAuthenticatedUser(next http.Handler) http.Handler
 		// Otherwise call the next handler in the chain.
 		next.ServeHTTP(w, r)
 	})
+}
+
+func noSurf(next http.Handler) http.Handler {
+	fmt.Printf("noSurf() called")
+	csrfHandler := nosurf.New(next)
+	csrfHandler.SetBaseCookie(http.Cookie{
+		HttpOnly: true,
+		Path:     "/",
+		Secure:   true,
+	})
+
+	return csrfHandler
 }
