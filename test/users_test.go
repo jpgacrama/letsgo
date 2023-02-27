@@ -13,17 +13,37 @@ import (
 	"snippetbox/pkg/models"
 )
 
-func TestUsers(t *testing.T) {
-	t.Run("Insert OK Case - Testing Insert", func(t *testing.T) {
-		db, mock := NewMock()
-		userModel := &mysql.UserModel{DB: db}
-		mock.ExpectExec("INSERT INTO users ...").WithArgs(
-			"Name", "Email", sqlmock.AnyArg(),
-		).WillReturnResult(sqlmock.NewResult(1, 1))
+func TestUserModelInsert(t *testing.T) {
+	tests := []struct {
+		testName string
+		userName string
+		email    string
+		password string
+		want     string
+	}{
+		{
+			testName: "Insert OK Case - Testing Insert",
+			userName: "Name",
+			email:    "Email",
+			password: "Password",
+		},
+	}
 
-		err := userModel.Insert("Name", "Email", "Password")
-		assert.NoError(t, err)
-	})
+	for _, tt := range tests {
+		t.Run(tt.testName, func(t *testing.T) {
+			db, mock := NewMock()
+			userModel := &mysql.UserModel{DB: db}
+			mock.ExpectExec("INSERT INTO users ...").WithArgs(
+				tt.userName, tt.email, sqlmock.AnyArg(),
+			).WillReturnResult(sqlmock.NewResult(1, 1))
+
+			err := userModel.Insert(tt.userName, tt.email, tt.password)
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestUsers(t *testing.T) {
 	t.Run("Authenticate OK Case", func(t *testing.T) {
 		db, mock := NewMock()
 		userModel := &mysql.UserModel{DB: db}
