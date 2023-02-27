@@ -61,9 +61,13 @@ func NewTemplateCache(dir string) (map[string]*template.Template, error) {
 }
 
 // Create a HumanDate function which returns a nicely formatted string
-// representation of a time.Time object.
+// representation of a time.Time object in UTC format.
 func HumanDate(t time.Time) string {
-	return t.Format("02 Jan 2006 at 15:04")
+	if t.IsZero() {
+		return ""
+	}
+
+	return t.UTC().Format("02 Jan 2006 at 15:04")
 }
 
 // Initialize a template.FuncMap object and store it in a global variable. This is
