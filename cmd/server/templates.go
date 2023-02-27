@@ -60,9 +60,9 @@ func NewTemplateCache(dir string) (map[string]*template.Template, error) {
 	return cache, nil
 }
 
-// Create a humanDate function which returns a nicely formatted string
+// Create a HumanDate function which returns a nicely formatted string
 // representation of a time.Time object.
-func humanDate(t time.Time) string {
+func HumanDate(t time.Time) string {
 	return t.Format("02 Jan 2006 at 15:04")
 }
 
@@ -70,5 +70,5 @@ func humanDate(t time.Time) string {
 // essentially a string-keyed map which acts as a lookup between the names of our
 // custom template functions and the functions themselves.
 var functions = template.FuncMap{
-	"humanDate": humanDate,
+	"humanDate": HumanDate,
 }

@@ -1,4 +1,4 @@
-package snippetbox_test
+package test
 
 import (
 	"github.com/DATA-DOG/go-sqlmock"
