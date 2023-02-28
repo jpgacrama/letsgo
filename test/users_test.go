@@ -2,30 +2,40 @@ package test
 
 import (
 	"database/sql"
+	"database/sql/driver"
+	"errors"
 	"fmt"
-	"snippetbox/pkg/models/mysql"
-	"testing"
-	"time"
-
 	"github.com/DATA-DOG/go-sqlmock"
+	sqlDriver "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 	"snippetbox/pkg/models"
+	"snippetbox/pkg/models/mysql"
+	"testing"
+	"time"
 )
 
 func TestUserModelInsert(t *testing.T) {
 	tests := []struct {
-		testName string
-		userName string
-		email    string
-		password string
-		want     string
+		testName       string
+		userName       string
+		email          string
+		password       string
+		duplicateEntry bool
 	}{
 		{
-			testName: "Insert OK Case - Testing Insert",
-			userName: "Name",
-			email:    "Email",
-			password: "Password",
+			testName:       "UserModel Insert OK Case",
+			userName:       "Name",
+			email:          "Email",
+			password:       "Password",
+			duplicateEntry: false,
+		},
+		{
+			testName:       "UserModel Insert OK Case - Duplicate Entry",
+			userName:       "Name",
+			email:          "Email",
+			password:       "Password",
+			duplicateEntry: true,
 		},
 	}
 
@@ -33,12 +43,27 @@ func TestUserModelInsert(t *testing.T) {
 		t.Run(tt.testName, func(t *testing.T) {
 			db, mock := NewMock()
 			userModel := &mysql.UserModel{DB: db}
-			mock.ExpectExec("INSERT INTO users ...").WithArgs(
-				tt.userName, tt.email, sqlmock.AnyArg(),
-			).WillReturnResult(sqlmock.NewResult(1, 1))
+
+			if tt.duplicateEntry {
+				mysqlError := sqlDriver.MySQLError{
+					Number:  1062,
+					Message: "Error 1062: Duplicate entry",
+				}
+				mock.ExpectExec("INSERT INTO users ...").WithArgs(
+					tt.userName, tt.email, sqlmock.AnyArg(),
+				).WillReturnError(errors.New(mysqlError.Error())).WillReturnResult(driver.ResultNoRows)
+			} else {
+				mock.ExpectExec("INSERT INTO users ...").WithArgs(
+					tt.userName, tt.email, sqlmock.AnyArg(),
+				).WillReturnResult(sqlmock.NewResult(1, 1))
+			}
 
 			err := userModel.Insert(tt.userName, tt.email, tt.password)
-			assert.NoError(t, err)
+			if err != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
