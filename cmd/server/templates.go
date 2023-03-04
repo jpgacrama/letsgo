@@ -10,7 +10,8 @@ import (
 )
 
 type templateData struct {
-	AuthenticatedUser int
+	AuthenticatedUser *models.User
+	CSRFToken         string
 	CurrentYear       int
 	Flash             string
 	Form              *forms.Form
@@ -59,15 +60,19 @@ func NewTemplateCache(dir string) (map[string]*template.Template, error) {
 	return cache, nil
 }
 
-// Create a humanDate function which returns a nicely formatted string
-// representation of a time.Time object.
-func humanDate(t time.Time) string {
-	return t.Format("02 Jan 2006 at 15:04")
+// Create a HumanDate function which returns a nicely formatted string
+// representation of a time.Time object in UTC format.
+func HumanDate(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+
+	return t.UTC().Format("02 Jan 2006 at 15:04")
 }
 
 // Initialize a template.FuncMap object and store it in a global variable. This is
 // essentially a string-keyed map which acts as a lookup between the names of our
 // custom template functions and the functions themselves.
 var functions = template.FuncMap{
-	"humanDate": humanDate,
+	"humanDate": HumanDate,
 }

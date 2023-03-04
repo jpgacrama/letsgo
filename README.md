@@ -19,7 +19,7 @@ Download the CSS and Javascript files by running this in your terminal `$ curl h
 1. Run the Web Server using this command `go run cmd/web/* -port=":4000"`
 2. Curl to the server using this command `curl -iL -X POST http://localhost:4000/snippet/create`
 3. See the contents of mysql using these commands
-    - Start MySQL: `mysql -D snippetbox -u root -p `
+    - Start MySQL: `mysql -D snippetbox -u root -p`
     - Check its contents: `SELECT id, title, expires FROM snippets;`
 
 ## Running Code Coverage

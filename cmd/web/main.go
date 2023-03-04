@@ -1,19 +1,15 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/golangcollege/sessions"
+	"net/http"
 	"snippetbox/cmd/server"
 	"snippetbox/pkg/models/mysql"
-
-	_ "github.com/go-sql-driver/mysql"
-
 	"time"
-
-	"github.com/golangcollege/sessions"
-
-	"crypto/tls"
-	"net/http"
 )
 
 type flags struct {
@@ -53,7 +49,6 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
-// Function to set the TLS Settings
 func setTLSSettings() *tls.Config {
 	return &tls.Config{
 		PreferServerCipherSuites: true,
